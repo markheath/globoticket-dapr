@@ -1,0 +1,21 @@
+﻿@model GloboTicket.Frontend.Models.Api.Event
+<tr>
+    <td>
+        <img class="artistPic" src="@Model.ImageUrl" alt="Artist pic" />
+    </td>
+    <td>
+        @Model.Date.ToShortDateString()
+    </td>
+    <td>
+        @Model.Name
+    </td>
+    <td>
+        @Model.Artist
+    </td>
+    <td class="bold big">
+        $@Model.Price
+    </td>
+    <td>
+        <a class="btn-primary" type="button" asp-action="Detail" asp-route-eventId="@Model.EventId">PURCHASE DETAILS</a>
+    </td>
+</tr>

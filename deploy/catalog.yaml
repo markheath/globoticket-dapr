@@ -1,0 +1,31 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalog
+  labels:
+    app: catalog
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catalog
+  template:
+    metadata:
+      labels:
+        app: catalog
+      annotations:
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "catalog"
+        dapr.io/app-port: "80"
+        dapr.io/config: "appconfig"
+    spec:
+      containers:
+      - name: catalog
+        image: markheath/globoticket-dapr-catalog:latest
+        ports:
+        - containerPort: 80
+        imagePullPolicy: Always
+        env:
+        - name: SECRET_STORE_NAME
+          value: "kubernetes"

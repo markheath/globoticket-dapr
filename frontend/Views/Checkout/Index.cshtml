@@ -1,0 +1,47 @@
+﻿@model GloboTicket.Frontend.Models.View.CheckoutViewModel
+
+<div class="row">
+        <h2>Checkout</h2>
+        <!-- Tag helpers https://docs.microsoft.com/en-US/aspnet/core/mvc/views/tag-helpers/intro?view=aspnetcore-5.0 -->
+
+            <form class="form" asp-action="Purchase">
+         <div class="form-group">
+            <label asp-for="Name">Name</label>
+            <span class="text-danger" asp-validation-for="Name"></span>
+            <input class="form-control" asp-for="Name" />
+        </div>
+        <div class="form-group">
+            <label asp-for="Email">Email</label>
+            <span class="text-danger" asp-validation-for="Email"></span>
+            <input class="form-control" asp-for="Email" />
+        </div>
+        <div class="form-group">
+            <label asp-for="Address">Address</label>
+            <span class="text-danger" asp-validation-for="Address"></span>
+            <input class="form-control" asp-for="Address" />
+        </div>
+        <div class="form-group">
+            <label asp-for="Town">Town</label>
+            <span class="text-danger" asp-validation-for="Town"></span>
+            <input class="form-control" asp-for="Town" />
+        </div>
+        <div class="form-group">
+            <label asp-for="PostalCode">Postal Code</label>
+            <span class="text-danger" asp-validation-for="PostalCode"></span>
+            <input class="form-control" asp-for="PostalCode" />        
+        </div>
+        <div class="form-group">
+            <label asp-for="CreditCard">Credit Card</label>
+            <span class="text-danger" asp-validation-for="CreditCard"></span>
+            <input class="form-control" asp-for="CreditCard" />
+        </div>
+        <div class="form-group">
+            <label asp-for="CreditCardDate">Expiry Date</label>
+            <span class="text-danger" asp-validation-for="CreditCardDate"></span>
+            <input class="form-control" asp-for="CreditCardDate" />
+        </div>
+        <button type="submit" class="btn btn-primary ml-4 w-50">SUBMIT ORDER</button>
+    </form>  
+
+</div>
+

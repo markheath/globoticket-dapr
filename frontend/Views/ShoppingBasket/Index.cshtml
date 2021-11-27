@@ -1,0 +1,30 @@
+﻿@model IEnumerable<GloboTicket.Frontend.Models.View.BasketLineViewModel>
+
+<table class="table">
+    <thead>
+        <tr class="columnHeader">
+            <th>EVENT NAME</th>
+            <th>DATE</th>
+            <th>PRICE PER TICKET</th>
+            <th>QUANTITY</th>
+            <th>TOTAL</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @Html.EditorForModel()
+        <tr>
+            <td colspan="4">
+                <a asp-controller="EventCatalog" asp-action="Index">
+                    <img class="backIcon" src="~/img/arrow-down.svg" /> Back to event catalog
+                </a>
+            </td>
+            <td class="bold big">$@Model.Sum(bl => bl.Price * bl.Quantity)</td>
+        </tr>
+    </tbody>
+</table>
+
+@if(Model.Count() > 0)
+{
+    <a asp-controller="Checkout" asp-action="Index" class="btn btn-primary">CHECKOUT</a>
+}

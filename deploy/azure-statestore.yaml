@@ -1,0 +1,19 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: shopstate
+spec:
+  type: state.azure.blobstorage
+  version: v1
+  metadata:
+  - name: accountName
+    value: "globoticketstate"
+  - name: accountKey
+    secretKeyRef:
+      name: blob-secret
+      key:  account-key
+  - name: containerName
+    value: "statestore"
+
+auth:
+  secretStore: kubernetes

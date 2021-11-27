@@ -1,0 +1,114 @@
+version: '3.4'
+
+# https://docs.dapr.io/operations/hosting/self-hosted/self-hosted-with-docker/
+# sample: https://github.com/dapr/samples/blob/master/hello-docker-compose/docker-compose.yml
+# another sample: https://github.com/cecilphillip/ZeroToHeroDaprCon/blob/main/demo2/docker-compose-dapr.yml
+# a bigger sample: https://github.com/dotnet-architecture/eShopOnDapr/blob/main/docker-compose.override.yml
+
+# currently not working due to issue https://github.com/dotnet/aspnetcore/issues/35285
+# we don't need placement because we're not using actors
+
+services:
+  catalog:
+    image: ${DOCKER_REGISTRY-}catalog
+    build:
+      context: .
+      dockerfile: catalog/Dockerfile
+    environment:
+      - DAPR_HTTP_PORT=3500
+    networks:
+      - globoticket-dapr
+  catalog-dapr:
+    image: "daprio/daprd:1.5.0"
+    command: [
+      "./daprd",
+     "-app-id", "catalog",
+     "-app-port", "80",
+     "-components-path", "/components",
+     "-config", "/config/config.yaml"
+     ]
+    volumes:
+      - "./dapr/dc-components/:/components"
+      - "./dapr/dc-config/:/config"
+    depends_on:
+      - catalog
+    network_mode: "service:catalog"
+
+  frontend:
+    image: ${DOCKER_REGISTRY-}frontend
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    environment:
+      - DAPR_HTTP_PORT=3500
+    networks:
+      - globoticket-dapr
+
+  frontend-dapr:
+    image: "daprio/daprd:1.5.0"
+    command: [
+      "./daprd",
+     "-app-id", "frontend",
+     "-app-port", "80",
+     "-components-path", "/components",
+     "-config", "/config/config.yaml"
+     ]
+    volumes:
+      - "./dapr/dc-components/:/components"
+      - "./dapr/dc-config/:/config"
+    depends_on:
+      - frontend
+    network_mode: "service:frontend"
+
+  ordering:
+    image: ${DOCKER_REGISTRY-}ordering
+    build:
+      context: .
+      dockerfile: ordering/Dockerfile
+    environment:
+      - DAPR_HTTP_PORT=3500
+    networks:
+      - globoticket-dapr
+  ordering-dapr:
+    image: "daprio/daprd:1.5.0"
+    command: [
+      "./daprd",
+     "-app-id", "ordering",
+     "-app-port", "80",
+     "-components-path", "/components",
+     "-config", "/config/config.yaml"
+     ]
+    volumes:
+      - "./dapr/dc-components/:/components"
+      - "./dapr/dc-config/:/config"
+    depends_on:
+      - ordering
+    network_mode: "service:ordering"
+
+  redis:
+    container_name: "redis_service"
+    image: "redis:6.2-alpine"
+    ports:
+      - "6379"
+    networks:
+      - globoticket-dapr
+
+  maildev:
+    container_name: "maildev_service" 
+    image: "maildev/maildev:1.1.0" # https://hub.docker.com/r/maildev/maildev
+    ports:
+      - "25"
+      - "1080:80"
+    networks:
+      - globoticket-dapr
+      
+  zipkin:
+    container_name: "zipkin_service"
+    image: "openzipkin/zipkin:2.23.4" # https://registry.hub.docker.com/r/openzipkin/zipkin
+    ports:
+      - 9412:9411
+    networks:
+      - globoticket-dapr
+
+networks:
+    globoticket-dapr:

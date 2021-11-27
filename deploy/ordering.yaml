@@ -1,0 +1,28 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ordering
+  labels:
+    app: ordering
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ordering
+  template:
+    metadata:
+      labels:
+        app: ordering
+      annotations:
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "ordering"
+        dapr.io/app-port: "80"
+        dapr.io/config: "appconfig"
+    spec:
+      containers:
+      - name: ordering
+        image: markheath/globoticket-dapr-ordering:latest
+        ports:
+        - containerPort: 80
+        imagePullPolicy: Always

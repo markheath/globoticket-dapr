@@ -1,0 +1,20 @@
+{
+  "profiles": {
+    "Docker Compose": {
+      "commandName": "DockerCompose",
+      "composeLaunchAction": "LaunchBrowser",
+      "composeLaunchServiceName": "frontend",
+      "composeLaunchUrl": "{Scheme}://localhost:{ServicePort}",
+      "commandVersion": "1.0",
+      "serviceActions": {
+        "catalog": "StartDebugging",
+        "catalog-dapr": "StartWithoutDebugging",
+        "frontend": "StartDebugging",
+        "frontend-dapr": "StartWithoutDebugging",
+        "ordering": "StartDebugging",
+        "ordering-dapr": "StartWithoutDebugging",
+        "redis": "StartWithoutDebugging"
+      }
+    }
+  }
+}
