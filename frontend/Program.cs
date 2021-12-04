@@ -25,8 +25,9 @@ else
     builder.Services.AddDaprClient();
     builder.Services.AddHttpClient<IEventCatalogService, EventCatalogService>((sp, c) =>
         c.BaseAddress = new Uri($"http://localhost:{daprPort}/v1.0/invoke/catalog/method/"));
-    builder.Services.AddHttpClient<IShoppingBasketService, DaprStateStoreShoppingBasket>((sp, c) =>
-    c.BaseAddress = new Uri($"http://localhost:{daprPort}/v1.0/state/shopstate/"));
+    /*builder.Services.AddHttpClient<IShoppingBasketService, DaprStateStoreShoppingBasket>((sp, c) =>
+    c.BaseAddress = new Uri($"http://localhost:{daprPort}/v1.0/state/shopstate/"));*/
+    builder.Services.AddScoped<IShoppingBasketService, DaprClientStateStoreShoppingBasket>();
     builder.Services.AddScoped<IOrderSubmissionService, DaprOrderSubmissionService>();
 }
 
