@@ -18,6 +18,7 @@ namespace GloboTicket.Frontend.Services
 
         public async Task<IEnumerable<Event>> GetAll()
         {
+            //TODO: client.GetFromJsonAsync
             var response = await client.GetAsync("event");
             return await response.ReadContentAs<List<Event>>();
         }

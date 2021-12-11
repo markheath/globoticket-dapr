@@ -1,0 +1,19 @@
+GET http://localhost:5016/event
+
+###
+
+GET http://localhost:5016/event/cfb88e29-4744-48c0-94fa-b25b92dea317
+
+###
+
+GET http://localhost:3501/v1.0/invoke/catalog/method/event
+
+
+###
+GET http://localhost:3501/v1.0/invoke/catalog/method/event/cfb88e29-4744-48c0-94fa-b25b92dea317
+
+
+###
+GET http://localhost:3501/event/cfb88e29-4744-48c0-94fa-b25b92dea319
+dapr-app-id: catalog
+

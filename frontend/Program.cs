@@ -1,6 +1,7 @@
 using GloboTicket.Frontend.Services;
 using GloboTicket.Frontend.Models;
 using GloboTicket.Frontend.Services.Ordering;
+using Dapr.Client;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,8 +24,9 @@ else
 {
     Console.WriteLine("DAPR");
     builder.Services.AddDaprClient();
-    builder.Services.AddHttpClient<IEventCatalogService, EventCatalogService>((sp, c) =>
+    builder.Services.AddHttpClient<IEventCatalogService, EventCatalogService>(c =>
         c.BaseAddress = new Uri($"http://localhost:{daprPort}/v1.0/invoke/catalog/method/"));
+    // builder.Services.AddSingleton<IEventCatalogService>(sc => new EventCatalogService(DaprClient.CreateInvokeHttpClient("catalog")));
     /*builder.Services.AddHttpClient<IShoppingBasketService, DaprStateStoreShoppingBasket>((sp, c) =>
     c.BaseAddress = new Uri($"http://localhost:{daprPort}/v1.0/state/shopstate/"));*/
     builder.Services.AddScoped<IShoppingBasketService, DaprClientStateStoreShoppingBasket>();
