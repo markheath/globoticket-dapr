@@ -1,16 +1,17 @@
 using System.Text.Json;
+using Dapr.Client;
 
 namespace GloboTicket.Catalog.Repositories;
 
 public class EventRepository : IEventRepository
 {
     private List<Event> events = new List<Event>();
-    private readonly IHttpClientFactory httpClientFactory;
+    private readonly DaprClient daprClient;
     private readonly ILogger<EventRepository> logger;
 
-    public EventRepository(IHttpClientFactory httpClientFactory, ILogger<EventRepository> logger)
+    public EventRepository(DaprClient daprClient, ILogger<EventRepository> logger)
     {
-        this.httpClientFactory = httpClientFactory;
+        this.daprClient = daprClient;
         this.logger = logger;
 
         var johnEgbertGuid = Guid.Parse("{CFB88E29-4744-48C0-94FA-B25B92DEA317}");
@@ -65,27 +66,17 @@ public class EventRepository : IEventRepository
         return events;
     }
 
-    class EventCatalogSecret
-    {
-        public string EventCatalogDb { get; set; }
-    }
-
     private async Task<string> GetConnectionString()
     {
         var daprPort = Environment.GetEnvironmentVariable("DAPR_HTTP_PORT");
         
         if (!string.IsNullOrEmpty(daprPort))
         {
-            var secretStoreName = Environment.GetEnvironmentVariable("SECRET_STORE_NAME");
-            if(string.IsNullOrEmpty(secretStoreName)) secretStoreName = "secretstore"; // in kubernetes, we'll just use the default secret store ("kubernetes")
-            var secretName = "eventcatalogdb";
-            var daprSecretUrl = $"http://localhost:{daprPort}/v1.0/secrets/{secretStoreName}/{secretName}";
-            var client = httpClientFactory.CreateClient();
-            logger.LogInformation($"Fetching secret from {daprSecretUrl}");
-            var secretJson = await client.GetStringAsync(daprSecretUrl);
-            logger.LogInformation($"Secret JSON: {secretJson}");
-            var secret = JsonSerializer.Deserialize<EventCatalogSecret>(secretJson, new JsonSerializerOptions() { PropertyNameCaseInsensitive = true });
-            return secret.EventCatalogDb;
+          var secretStoreName = Environment.GetEnvironmentVariable("SECRET_STORE_NAME");
+          if(string.IsNullOrEmpty(secretStoreName)) secretStoreName = "secretstore";
+          var secretName = "eventcatalogdb";
+          var secret = await daprClient.GetSecretAsync(secretStoreName, secretName);
+          return secret[secretName];
         }
         return "Not using Dapr";
     }
