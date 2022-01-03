@@ -86,17 +86,20 @@ docker push markheath/globoticket-dapr-ordering
 docker tag frontend markheath/globoticket-dapr-frontend
 docker push markheath/globoticket-dapr-frontend
 
-### STEP 8 - deploy other components
+### STEP 8 - deploy Dapr component definitions for pub-sub, state store and cron jon
 kubectl apply -f .\deploy\azure-pubsub.yaml
 kubectl apply -f .\deploy\azure-statestore.yaml
 kubectl apply -f .\deploy\cron.yaml
 
-#TODO: not done anything for email output binding yet
+### STEP 9 - deploy maildev service
 kubectl create deployment maildev --image maildev/maildev
 kubectl expose deployment maildev --type ClusterIP --port 25,80
+### STEP 10 - deploy email component definition
+kubectl apply -f .\deploy\email.yaml
+
+# to check that maildev is working:
 kubectl port-forward svc/maildev 8081:80
 # navigate to http://localhost:8081
-kubectl apply -f .\deploy\email.yaml
 
 # can look at the components in Dapr dashboard
 dapr dashboard -k
@@ -124,7 +127,7 @@ az aks browse -n $AKS_NAME -g $RESOURCEGROUP
 $FRONTEND_IP = kubectl get svc frontend -o jsonpath="{.status.loadBalancer.ingress[*].ip}"
 
 
-### STEP 9 - TEST THE APP
+### STEP 11 - TEST THE APP
 
 # frontend is running on port 8080
 Start-Process "http://$($FRONTEND_IP):8080"
@@ -134,5 +137,5 @@ kubectl port-forward svc/zipkin 9412:9411
 # navigate to http://localhost:9412
 
 
-### STEP 10 - CLEAN UP
+### STEP 12 - CLEAN UP
 az group delete -n $RESOURCEGROUP
