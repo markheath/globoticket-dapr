@@ -13,7 +13,8 @@ public class DaprClientStateStoreShoppingBasket : IShoppingBasketService
     private readonly ILogger<DaprStateStoreShoppingBasket> logger;
     private const string stateStoreName = "shopstate";
 
-    public DaprClientStateStoreShoppingBasket(DaprClient daprClient,
+    public DaprClientStateStoreShoppingBasket(
+        DaprClient daprClient,
         IEventCatalogService eventCatalogService,
         Settings settings,
         ILogger<DaprStateStoreShoppingBasket> logger)
