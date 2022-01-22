@@ -22,7 +22,8 @@ namespace GloboTicket.Frontend.Services.Ordering
             var order = new OrderForCreation();
             order.Date = DateTimeOffset.Now;
             order.OrderId = Guid.NewGuid();
-            order.Lines = lines.Select(line => new OrderLine() { EventId = line.EventId, Price = line.Price, TicketCount = line.TicketAmount }).ToList();
+            order.Lines = lines.Select(line => new OrderLine() 
+            { EventId = line.EventId, Price = line.Price, TicketCount = line.TicketAmount }).ToList();
             order.CustomerDetails = new CustomerDetails()
             {
                 Address = checkoutViewModel.Address,
@@ -33,7 +34,6 @@ namespace GloboTicket.Frontend.Services.Ordering
                 Town = checkoutViewModel.Town,
                 CreditCardExpiryDate = checkoutViewModel.CreditCardDate
             };
-            // send a dapr pub sub message
             logger.LogInformation("Posting order event to Dapr pubsub");
             await daprClient.PublishEventAsync("pubsub", "orders", order);
             return order.OrderId;

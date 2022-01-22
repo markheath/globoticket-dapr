@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Threading.Tasks;
-using GloboTicket.Frontend.Extensions;
+﻿using GloboTicket.Frontend.Extensions;
 using GloboTicket.Frontend.Models.Api;
 
 namespace GloboTicket.Frontend.Services
@@ -18,7 +14,6 @@ namespace GloboTicket.Frontend.Services
 
         public async Task<IEnumerable<Event>> GetAll()
         {
-            //TODO: client.GetFromJsonAsync
             var response = await client.GetAsync("event");
             return await response.ReadContentAs<List<Event>>();
         }

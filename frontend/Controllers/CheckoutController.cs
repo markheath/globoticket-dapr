@@ -52,7 +52,6 @@ namespace GloboTicket.Frontend.Controllers
                 var orderId = await orderSubmissionService.SubmitOrder(checkout);
                 await shoppingBasketService.ClearBasket(currentBasketId);
 
-                // TODO: redirect to a thank you page
                 return RedirectToAction("Thanks");
             }
             else
