@@ -72,7 +72,21 @@ docker push markheath/globoticket-dapr-frontend
 docker push markheath/globoticket-dapr-catalog
 docker push markheath/globoticket-dapr-ordering
 
-### STEP 5 - set up zipkin
+# STEP 6 - put connection strings into Kubernetes secrets
+
+kubectl create secret generic blob-secret `
+  --from-literal=account-key="$STORAGE_ACCOUNT_KEY"
+kubectl create secret generic servicebus-secret `
+  --from-literal=connection-string="$SERVICE_BUS_CONNECTION_STRING"
+kubectl create secret generic eventcatalogdb `
+  --from-literal=eventcatalogdb="Event Catalog Connection String from Kubernetes"
+
+#kubectl get secrets
+#kubectl describe secrets/blob-secret
+#kubectl get secret blob-secret -o jsonpath='{.data}'
+#kubectl delete secret blob-secret
+
+### STEP 7 - set up zipkin
 # instructions - https://docs.dapr.io/operations/monitoring/tracing/supported-tracing-backends/zipkin/
 
 kubectl create deployment zipkin --image openzipkin/zipkin
@@ -83,23 +97,6 @@ kubectl apply -f .\deploy\appconfig.yaml
 kubectl port-forward svc/zipkin 9411:9411
 # navigate to http://localhost:9411
 
-
-# STEP 6 - put connection strings into Kubernetes secrets
-
-kubectl create secret generic blob-secret `
-  --from-literal=account-key="$STORAGE_ACCOUNT_KEY"
-kubectl create secret generic servicebus-secret `
-  --from-literal=connection-string="$SERVICE_BUS_CONNECTION_STRING"
-kubectl create secret generic eventcatalogdb `
-  --from-literal=eventcatalogdb="Event Catalog Connection String"
-
-#kubectl get secrets
-#kubectl describe secrets/blob-secret
-#kubectl get secret blob-secret -o jsonpath='{.data}'
-#kubectl delete secret blob-secret
-
-
-
 ### STEP 8 - deploy Dapr component definitions for pub-sub, state store and cron jon
 kubectl apply -f .\deploy\azure-pubsub.yaml
 kubectl apply -f .\deploy\azure-statestore.yaml
@@ -108,6 +105,7 @@ kubectl apply -f .\deploy\cron.yaml
 ### STEP 9 - deploy maildev service
 kubectl create deployment maildev --image maildev/maildev
 kubectl expose deployment maildev --type ClusterIP --port 25,80
+
 ### STEP 10 - deploy email component definition
 kubectl apply -f .\deploy\email.yaml
 
@@ -118,7 +116,7 @@ kubectl port-forward svc/maildev 8081:80
 # can look at the components in Dapr dashboard
 dapr dashboard -k
 
-# STEP 8 - install app onto AKS
+# STEP 11 - install app onto AKS
 kubectl apply -f .\deploy\frontend.yaml
 kubectl apply -f .\deploy\ordering.yaml
 kubectl apply -f .\deploy\catalog.yaml # n.b. to remove its kubectl delete
@@ -131,17 +129,21 @@ kubectl get pods
 kubectl get services
 
 # examples for how to look at the logs for specific containers
-kubectl logs catalog-5f6dbb87b7-zh5sz  catalog
-kubectl logs frontend-d6d7f7bff-zqqvm  frontend
-kubectl logs frontend-d6d7f7bff-t7vj6  daprd
+$CATALOG_POD_NAME = kubectl get pods --selector=app=catalog -o jsonpath='{.items[*].metadata.name}'
+$FRONTEND_POD_NAME = kubectl get pods --selector=app=frontend -o jsonpath='{.items[*].metadata.name}'
+$ORDERING_POD_NAME = kubectl get pods --selector=app=ordering -o jsonpath='{.items[*].metadata.name}'
 
-# launch in the portal
+kubectl logs $CATALOG_POD_NAME catalog
+kubectl logs $FRONTEND_POD_NAME frontend
+kubectl logs $ORDERING_POD_NAME ordering
+kubectl logs $FRONTEND_POD_NAME daprd # to see the logs from the sidecar
+
+# to view the AKS cluster in the Azure portal
 az aks browse -n $AKS_NAME -g $RESOURCEGROUP
 
-$FRONTEND_IP = kubectl get svc frontend -o jsonpath="{.status.loadBalancer.ingress[*].ip}"
-
-
 ### STEP 11 - TEST THE APP
+
+$FRONTEND_IP = kubectl get svc frontend -o jsonpath="{.status.loadBalancer.ingress[*].ip}"
 
 # frontend is running on port 8080
 Start-Process "http://$($FRONTEND_IP):8080"
@@ -149,7 +151,6 @@ Start-Process "http://$($FRONTEND_IP):8080"
 # let's check in zipkin - make sure we're looking at the right zipkin (the one in AKS) by using a different port number
 kubectl port-forward svc/zipkin 9412:9411
 # navigate to http://localhost:9412
-
 
 ### STEP 12 - CLEAN UP
 az group delete -n $RESOURCEGROUP
