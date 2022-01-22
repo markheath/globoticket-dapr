@@ -1,28 +1,26 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using GloboTicket.Catalog.Repositories;
+using Microsoft.AspNetCore.Mvc;
 
-namespace GloboTicket.Catalog.Controllers
+namespace GloboTicket.Catalog.Controllers;
+
+[ApiController]
+[Route("scheduled")]
+public class ScheduledController : ControllerBase
 {
-    [ApiController]
-    [Route("scheduled")]
-    public class ScheduledController : ControllerBase
+    private readonly ILogger<ScheduledController> logger;
+    private IEventRepository eventRepository;
+
+    public ScheduledController(ILogger<ScheduledController> logger,
+        IEventRepository eventRepository)
     {
-        private readonly ILogger<ScheduledController> _logger;
-
-        public ScheduledController(ILogger<ScheduledController> logger)
-        {
-            _logger = logger;
-        }
-        [HttpPost("", Name = "Scheduled")]
-        public void OnSchedule()
-        {
-            _logger.LogInformation("scheduled endpoint called");          
-        }
-
-        [HttpGet()]
-        public string Test()
-        {
-            _logger.LogInformation("testing scheduled endpoint called");
-            return "Working";
-        }
+        this.logger = logger;
+        this.eventRepository = eventRepository;
+    }
+    
+    [HttpPost("", Name = "Scheduled")]
+    public void OnSchedule()
+    {
+        logger.LogInformation("scheduled endpoint called");
+        eventRepository.UpdateSpecialOffer();
     }
 }

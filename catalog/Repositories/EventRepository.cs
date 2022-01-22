@@ -14,6 +14,11 @@ public class EventRepository : IEventRepository
         this.daprClient = daprClient;
         this.logger = logger;
 
+        LoadSampleData();
+    }
+
+    private void LoadSampleData()
+    {
         var johnEgbertGuid = Guid.Parse("{CFB88E29-4744-48C0-94FA-B25B92DEA317}");
         var nickSailorGuid = Guid.Parse("{CFB88E29-4744-48C0-94FA-B25B92DEA318}");
         var michaelJohnsonGuid = Guid.Parse("{CFB88E29-4744-48C0-94FA-B25B92DEA319}");
@@ -50,8 +55,8 @@ public class EventRepository : IEventRepository
             Description = "The critics are over the moon and so will you after you've watched this sing and dance extravaganza written by Nick Sailor, the man from 'My dad and sister'.",
             ImageUrl = "/img/musical.jpg",
         });
-
     }
+
     public async Task<IEnumerable<Event>> GetEvents()
     {
         try
@@ -90,5 +95,18 @@ public class EventRepository : IEventRepository
             throw new InvalidOperationException("Event not found");
         }
         return Task.FromResult(@event);
+    }
+
+    // scheduled task calls this periodically to put one item on special offer
+    public void UpdateSpecialOffer()
+    {
+        // reset all tickets to their default
+        events.Clear();
+        LoadSampleData();
+        // pick a random one to put on special offer
+        var random = new Random();
+        var specialOfferEvent = events[random.Next(0,events.Count)];
+        // 20 percent off
+        specialOfferEvent.Price = (int)(specialOfferEvent.Price * 0.8);
     }
 }
