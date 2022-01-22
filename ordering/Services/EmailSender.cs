@@ -16,7 +16,7 @@ public class EmailSender
 
     public async Task SendEmailForOrder(OrderForCreation order)
     {
-        logger.LogInformation($"Received a new order from {order.CustomerDetails}");
+        logger.LogInformation($"Received a new order for {order.CustomerDetails.Email}");
 
         var daprEnabled = !String.IsNullOrEmpty(Environment.GetEnvironmentVariable("DAPR_HTTP_PORT"));
         if (daprEnabled)
