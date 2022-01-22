@@ -14,12 +14,44 @@ $AKS_NAME = "globoticketdapr"
 az group create -n $RESOURCEGROUP -l $LOCATION 
 
 # create the AKS cluster
-az aks create -g $RESOURCEGROUP -n $AKS_NAME --node-count 1 --enable-addons http_application_routing --generate-ssh-keys
+az aks create -g $RESOURCEGROUP -n $AKS_NAME --node-count 1 `
+  --enable-addons http_application_routing --generate-ssh-keys
 
 # Get credentials for kubectl to use
 az aks get-credentials -g $RESOURCEGROUP -n $AKS_NAME --overwrite-existing
 
-### STEP 2 - install Dapr onto the cluster
+# check kubectl config is as expected
+kubectl config current-context
+
+### STEP 2 - set up blob storage for state
+# $RAND = -join ((48..57) + (97..122) | Get-Random -Count 6 | % {[char]$_})
+$STORAGE_ACCOUNT = "globoticketstate"
+
+az storage account create -n $STORAGE_ACCOUNT -g $RESOURCEGROUP -l $LOCATION --sku Standard_LRS
+
+$STORAGE_CONNECTION_STRING = az storage account show-connection-string `
+  -n $STORAGE_ACCOUNT -g $RESOURCEGROUP --query connectionString -o tsv
+
+$STORAGE_ACCOUNT_KEY = az storage account keys list -g $RESOURCEGROUP `
+  -n $STORAGE_ACCOUNT --query [0].value -o tsv
+
+$env:AZURE_STORAGE_CONNECTION_STRING = $STORAGE_CONNECTION_STRING
+
+az storage container create -n "statestore" --public-access off
+
+### STEP 3 - set up Azure service bus for pub sub
+$SERVICE_BUS = "globoticketpubsub"
+
+az servicebus namespace create -g $RESOURCEGROUP `
+    -n $SERVICE_BUS -l $LOCATION --sku Standard
+
+$SERVICE_BUS_CONNECTION_STRING = az servicebus namespace authorization-rule keys list `
+      -g $RESOURCEGROUP --namespace-name $SERVICE_BUS `
+      -n RootManageSharedAccessKey `
+      --query primaryConnectionString `
+      --output tsv
+
+### STEP 4 - install Dapr onto the cluster
 # instructions - https://docs.dapr.io/operations/hosting/kubernetes/kubernetes-deploy/
 # (n.b. there is now a dapr extension for AKS is preview: https://docs.microsoft.com/en-us/azure/aks/dapr)
 dapr init -k
@@ -27,7 +59,20 @@ dapr init -k
 # to verify installation
 dapr status -k
 
-### STEP 3 - set up zipkin
+### STEP 5 - get containers pushed to docker
+
+# ensure we've built all our containers
+docker build -f .\frontend\Dockerfile -t markheath/globoticket-dapr-frontend .
+docker build -f .\catalog\Dockerfile -t markheath/globoticket-dapr-catalog .
+docker build -f .\ordering\Dockerfile -t markheath/globoticket-dapr-ordering .
+
+# and push them to Docker hub 
+# (real world would use ACR instead for private hosting and faster download in Azure)
+docker push markheath/globoticket-dapr-frontend
+docker push markheath/globoticket-dapr-catalog
+docker push markheath/globoticket-dapr-ordering
+
+### STEP 5 - set up zipkin
 # instructions - https://docs.dapr.io/operations/monitoring/tracing/supported-tracing-backends/zipkin/
 
 kubectl create deployment zipkin --image openzipkin/zipkin
@@ -38,25 +83,6 @@ kubectl apply -f .\deploy\appconfig.yaml
 kubectl port-forward svc/zipkin 9411:9411
 # navigate to http://localhost:9411
 
-### STEP 4 - set up blob storage for state
-# $RAND = -join ((48..57) + (97..122) | Get-Random -Count 6 | % {[char]$_})
-$STORAGE_ACCOUNT = "globoticketstate"
-az storage account create -n $STORAGE_ACCOUNT -g $RESOURCEGROUP -l $LOCATION --sku Standard_LRS
-$STORAGE_CONNECTION_STRING = az storage account show-connection-string -n $STORAGE_ACCOUNT -g $RESOURCEGROUP --query connectionString -o tsv
-$STORAGE_ACCOUNT_KEY = az storage account keys list -g $RESOURCEGROUP -n $STORAGE_ACCOUNT --query [0].value -o tsv
-
-$env:AZURE_STORAGE_CONNECTION_STRING = $STORAGE_CONNECTION_STRING
-az storage container create -n "statestore" --public-access off
-
-### STEP 5 - set up Azure service bus for pub sub
-$SERVICE_BUS = "globoticketpubsub"
-az servicebus namespace create -g $RESOURCEGROUP `
-    -n $SERVICE_BUS -l $LOCATION --sku Standard
-$SERVICE_BUS_CONNECTION_STRING = az servicebus namespace authorization-rule keys list `
-      -g $RESOURCEGROUP --namespace-name $SERVICE_BUS `
-      -n RootManageSharedAccessKey `
-      --query primaryConnectionString `
-      --output tsv
 
 # STEP 6 - put connection strings into Kubernetes secrets
 
@@ -72,19 +98,7 @@ kubectl create secret generic eventcatalogdb `
 #kubectl get secret blob-secret -o jsonpath='{.data}'
 #kubectl delete secret blob-secret
 
-### STEP 7 - get containers pushed to docker
 
-# ensure we've built all our containers
-docker-compose build
-
-docker tag catalog markheath/globoticket-dapr-catalog
-docker push markheath/globoticket-dapr-catalog
-
-docker tag ordering markheath/globoticket-dapr-ordering
-docker push markheath/globoticket-dapr-ordering
-
-docker tag frontend markheath/globoticket-dapr-frontend
-docker push markheath/globoticket-dapr-frontend
 
 ### STEP 8 - deploy Dapr component definitions for pub-sub, state store and cron jon
 kubectl apply -f .\deploy\azure-pubsub.yaml
@@ -119,7 +133,7 @@ kubectl get services
 # examples for how to look at the logs for specific containers
 kubectl logs catalog-5f6dbb87b7-zh5sz  catalog
 kubectl logs frontend-d6d7f7bff-zqqvm  frontend
-kubectl logs frontend-d6d7f7bff-47shs  daprd
+kubectl logs frontend-d6d7f7bff-t7vj6  daprd
 
 # launch in the portal
 az aks browse -n $AKS_NAME -g $RESOURCEGROUP
