@@ -8,6 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
+
 // note: for this demo we're using the DAPR_HTTP_PORT environment variable to decide if we're using Dapr or not
 var daprPort = Environment.GetEnvironmentVariable("DAPR_HTTP_PORT");
 if (String.IsNullOrEmpty(daprPort))
@@ -22,18 +23,15 @@ if (String.IsNullOrEmpty(daprPort))
 }
 else
 {
-    Console.WriteLine("DAPR");
+    Console.WriteLine("USING DAPR");
     builder.Services.AddDaprClient();
-    builder.Services.AddHttpClient<IEventCatalogService, EventCatalogService>(c =>
-        c.BaseAddress = new Uri($"http://localhost:{daprPort}/v1.0/invoke/catalog/method/"));
-    // builder.Services.AddSingleton<IEventCatalogService>(sc => new EventCatalogService(DaprClient.CreateInvokeHttpClient("catalog")));
-    /*builder.Services.AddHttpClient<IShoppingBasketService, DaprStateStoreShoppingBasket>((sp, c) =>
-    c.BaseAddress = new Uri($"http://localhost:{daprPort}/v1.0/state/shopstate/"));*/
+    //builder.Services.AddHttpClient<IEventCatalogService, EventCatalogService>(c =>
+    //    c.BaseAddress = new Uri($"http://localhost:{daprPort}/v1.0/invoke/catalog/method/"));
+    builder.Services.AddSingleton<IEventCatalogService>(sc => 
+        new EventCatalogService(DaprClient.CreateInvokeHttpClient("catalog")));
     builder.Services.AddScoped<IShoppingBasketService, DaprClientStateStoreShoppingBasket>();
     builder.Services.AddScoped<IOrderSubmissionService, DaprOrderSubmissionService>();
 }
-
-
 
 builder.Services.AddSingleton<Settings>();
 
