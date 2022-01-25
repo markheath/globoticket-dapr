@@ -1,17 +1,12 @@
-using System.Text.Json;
-using Dapr.Client;
-
 namespace GloboTicket.Catalog.Repositories;
 
 public class EventRepository : IEventRepository
 {
     private List<Event> events = new List<Event>();
-    private readonly DaprClient daprClient;
     private readonly ILogger<EventRepository> logger;
 
-    public EventRepository(DaprClient daprClient, ILogger<EventRepository> logger)
+    public EventRepository(ILogger<EventRepository> logger)
     {
-        this.daprClient = daprClient;
         this.logger = logger;
 
         LoadSampleData();
@@ -57,35 +52,12 @@ public class EventRepository : IEventRepository
         });
     }
 
-    public async Task<IEnumerable<Event>> GetEvents()
+    public Task<IEnumerable<Event>> GetEvents()
     {
-        try
-        {
-          var connectionString = await GetConnectionString();
-          logger.LogInformation($"Connection string {connectionString}");
-        }
-        catch(Exception e)
-        {
-          logger.LogError(e, "Failed to fetch the connection string");
-        }
-        return events;
+        // this just returning an in-memory list for now
+        return Task.FromResult((IEnumerable<Event>)events);
     }
 
-    private async Task<string> GetConnectionString()
-    {
-        // using the DAPR_HTTP_PORT environment variable to detect if we're
-        // not running in DAPR
-        var daprPort = Environment.GetEnvironmentVariable("DAPR_HTTP_PORT");
-        if (string.IsNullOrEmpty(daprPort)) return "Not using Dapr";
-
-        // because in Kubernetes we want to use the "kubernetes" secret store,
-        // we're making the secret store name configurable here
-        var secretStoreName = Environment.GetEnvironmentVariable("SECRET_STORE_NAME");
-        if(string.IsNullOrEmpty(secretStoreName)) secretStoreName = "secretstore";
-        var secretName = "eventcatalogdb";
-        var secret = await daprClient.GetSecretAsync(secretStoreName, secretName);
-        return secret[secretName];
-    }
 
     public Task<Event> GetEventById(Guid eventId)
     {

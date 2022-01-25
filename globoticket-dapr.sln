@@ -13,34 +13,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dapr", "dapr", "{9C0B7280-6ACA-49D5-AEEF-091D49F1DB7F}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "components", "components", "{B9A5B435-AF2E-4481-947F-6951F110766A}"
-	ProjectSection(SolutionItems) = preProject
-		dapr\components\cron.yml = dapr\components\cron.yml
-		dapr\components\localSecretStore.yml = dapr\components\localSecretStore.yml
-		dapr\components\pubsub.yaml = dapr\components\pubsub.yaml
-		dapr\components\secrets.json = dapr\components\secrets.json
-		dapr\components\stateStore.yml = dapr\components\stateStore.yml
-	EndProjectSection
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ordering", "ordering\ordering.csproj", "{0AA4868D-A125-4336-B055-07DBA6D61E6C}"
-EndProject
-Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{3DD09D52-353A-4385-A007-F9F1A315522B}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dc-components", "dc-components", "{D3D0F60B-0FC3-42B2-AF3E-079F223DEA9A}"
-	ProjectSection(SolutionItems) = preProject
-		dapr\dc-components\cron.yml = dapr\dc-components\cron.yml
-		dapr\dc-components\localSecretStore.yml = dapr\dc-components\localSecretStore.yml
-		dapr\dc-components\pubsub.yaml = dapr\dc-components\pubsub.yaml
-		dapr\dc-components\secrets.json = dapr\dc-components\secrets.json
-		dapr\dc-components\stateStore.yml = dapr\dc-components\stateStore.yml
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dc-config", "dc-config", "{3005A4DA-5096-4820-83A1-CB3E6464C1C0}"
-	ProjectSection(SolutionItems) = preProject
-		dapr\dc-config\config.yaml = dapr\dc-config\config.yaml
-	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

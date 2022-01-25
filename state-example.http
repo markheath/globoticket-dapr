@@ -1,8 +1,0 @@
-POST http://localhost:3500/v1.0/state/statestore
-content-type: application/json
-
-[{"key":"color","value":"red"}]
-
-###
-
-GET  http://localhost:3500/v1.0/state/statestore/color

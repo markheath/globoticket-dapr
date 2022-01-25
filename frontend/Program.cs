@@ -1,7 +1,6 @@
 using GloboTicket.Frontend.Services;
 using GloboTicket.Frontend.Models;
 using GloboTicket.Frontend.Services.Ordering;
-using Dapr.Client;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,28 +8,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 
 // note: for this demo we're using the DAPR_HTTP_PORT environment variable to decide if we're using Dapr or not
-var daprPort = Environment.GetEnvironmentVariable("DAPR_HTTP_PORT");
-if (String.IsNullOrEmpty(daprPort))
-{
-    // we're not running in DAPR - use regular service invocation and an in-memory basket
-    Console.WriteLine("NOT USING DAPR");
-    builder.Services.AddHttpClient<IEventCatalogService, EventCatalogService>((sp, c) =>
-        c.BaseAddress = new Uri(sp.GetService<IConfiguration>()["ApiConfigs:EventCatalog:Uri"]));
-    builder.Services.AddSingleton<IShoppingBasketService, InMemoryShoppingBasketService>();
-    builder.Services.AddHttpClient<IOrderSubmissionService, HttpOrderSubmissionService>((sp, c) =>
-        c.BaseAddress = new Uri(sp.GetService<IConfiguration>()["ApiConfigs:Ordering:Uri"]));
-}
-else
-{
-    Console.WriteLine("USING DAPR");
-    builder.Services.AddDaprClient();
-    //builder.Services.AddHttpClient<IEventCatalogService, EventCatalogService>(c =>
-    //    c.BaseAddress = new Uri($"http://localhost:{daprPort}/v1.0/invoke/catalog/method/"));
-    builder.Services.AddSingleton<IEventCatalogService>(sc => 
-        new EventCatalogService(DaprClient.CreateInvokeHttpClient("catalog")));
-    builder.Services.AddScoped<IShoppingBasketService, DaprClientStateStoreShoppingBasket>();
-    builder.Services.AddScoped<IOrderSubmissionService, DaprOrderSubmissionService>();
-}
+builder.Services.AddHttpClient<IEventCatalogService, EventCatalogService>((sp, c) =>
+    c.BaseAddress = new Uri(sp.GetService<IConfiguration>()["ApiConfigs:EventCatalog:Uri"]));
+builder.Services.AddSingleton<IShoppingBasketService, InMemoryShoppingBasketService>();
+builder.Services.AddHttpClient<IOrderSubmissionService, HttpOrderSubmissionService>((sp, c) =>
+    c.BaseAddress = new Uri(sp.GetService<IConfiguration>()["ApiConfigs:Ordering:Uri"]));
 
 builder.Services.AddSingleton<Settings>();
 
