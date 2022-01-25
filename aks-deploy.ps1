@@ -93,9 +93,9 @@ kubectl create deployment zipkin --image openzipkin/zipkin
 kubectl expose deployment zipkin --type ClusterIP --port 9411
 kubectl apply -f .\deploy\appconfig.yaml
 
-# to test it out
-kubectl port-forward svc/zipkin 9411:9411
-# navigate to http://localhost:9411
+# to test it out (avoiding a port number clash with self-hosted zipkin)
+kubectl port-forward svc/zipkin 9412:9411
+# navigate to http://localhost:9412
 
 ### STEP 8 - deploy Dapr component definitions for pub-sub, state store and cron jon
 kubectl apply -f .\deploy\azure-pubsub.yaml
