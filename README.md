@@ -1,8 +1,8 @@
 # Dapr Fundamentals GloboTicket Demo Application
 
-This application is intended to demonstrate the basics of using Dapr to build a microservices application. 
+This application is intended to demonstrate the basics of using Dapr to build a microservices application. It is the demo project for the Pluralsight Dapr 1 Fundamentals course, by Mark Heath.
 
-It is based on the demo application in the Pluralsight Microservices in ASP.NET Core learning path
+This version of the code is using Dapr 1.6
 
 ## Running the app locally
 The recommended way for running locally is to use self-hosted mode (option 1). I have also managed to get it running in Docker Compose, although that option has not been tested so much.

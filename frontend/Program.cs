@@ -8,7 +8,6 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
-
 // note: for this demo we're using the DAPR_HTTP_PORT environment variable to decide if we're using Dapr or not
 var daprPort = Environment.GetEnvironmentVariable("DAPR_HTTP_PORT");
 if (String.IsNullOrEmpty(daprPort))

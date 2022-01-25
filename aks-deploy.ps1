@@ -59,6 +59,9 @@ dapr init -k
 # to verify installation
 dapr status -k
 
+# or to upgrade an existing deployment
+dapr upgrade -k --runtime-version 1.6.0
+
 ### STEP 5 - get containers pushed to docker
 
 # ensure we've built all our containers
