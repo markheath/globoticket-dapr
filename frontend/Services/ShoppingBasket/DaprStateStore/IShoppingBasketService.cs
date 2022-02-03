@@ -1,17 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using GloboTicket.Frontend.Models.Api;
+﻿using GloboTicket.Frontend.Models.Api;
 
-namespace GloboTicket.Frontend.Services
+namespace GloboTicket.Frontend.Services;
+
+public interface IShoppingBasketService
 {
-    public interface IShoppingBasketService
-    {
-        Task<BasketLine> AddToBasket(Guid basketId, BasketLineForCreation basketLine);
-        Task<IEnumerable<BasketLine>> GetLinesForBasket(Guid basketId);
-        Task<Basket> GetBasket(Guid basketId);
-        Task UpdateLine(Guid basketId, BasketLineForUpdate basketLineForUpdate);
-        Task RemoveLine(Guid basketId, Guid lineId);
-        Task ClearBasket(Guid currentBasketId);
-    }
+    Task<BasketLine> AddToBasket(Guid basketId, BasketLineForCreation basketLine);
+    Task<IEnumerable<BasketLine>> GetLinesForBasket(Guid basketId);
+    Task<Basket?> GetBasket(Guid basketId);
+    Task UpdateLine(Guid basketId, BasketLineForUpdate basketLineForUpdate);
+    Task RemoveLine(Guid basketId, Guid lineId);
+    Task ClearBasket(Guid currentBasketId);
 }

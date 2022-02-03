@@ -1,11 +1,8 @@
-using System;
+namespace GloboTicket.Frontend.Models.View;
 
-namespace GloboTicket.Frontend.Models.View
+public class ErrorViewModel
 {
-    public class ErrorViewModel
-    {
-        public string RequestId { get; set; }
+    public string RequestId { get; set; } = String.Empty;
 
-        public bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
-    }
+    public bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
 }

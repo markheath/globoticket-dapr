@@ -8,14 +8,14 @@ namespace GloboTicket.Frontend.Models.View
     public class CheckoutViewModel
     {
         public Guid BasketId { get; set; }
-        public string Name { get; set; }
-        public string Address { get; set; }
-        public string Town { get; set; }
-        public string PostalCode { get; set; }
+        public string Name { get; set; } = String.Empty;
+        public string Address { get; set; } = String.Empty;
+        public string Town { get; set; } = String.Empty;
+        public string PostalCode { get; set; } = String.Empty;
         [EmailAddress]
-        public string Email { get; set; }
+        public string Email { get; set; } = String.Empty;
         [CreditCard]
-        public string CreditCard { get; set; }
-        public string CreditCardDate { get; set; }
+        public string CreditCard { get; set; } = String.Empty;
+        public string CreditCardDate { get; set; } = String.Empty;
     }
 }

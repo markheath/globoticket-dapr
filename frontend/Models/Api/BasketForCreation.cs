@@ -1,11 +1,9 @@
-﻿using System;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
-namespace GloboTicket.Frontend.Models.Api
+namespace GloboTicket.Frontend.Models.Api;
+
+public class BasketForCreation
 {
-    public class BasketForCreation
-    {
-        [Required]
-        public Guid UserId { get; set; }
-    }
+    [Required]
+    public Guid UserId { get; set; }
 }
