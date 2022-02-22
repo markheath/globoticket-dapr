@@ -43,12 +43,15 @@ public class DaprStateStoreShoppingBasket : IShoppingBasketService
         return basketLine;
     }
 
-    public async Task<Basket?> GetBasket(Guid basketId)
+    public async Task<Basket> GetBasket(Guid basketId)
     {
         logger.LogInformation($"GET BASKET {basketId}");
         var basket = await GetBasketFromStateStore(basketId);
 
-        return new Basket() { BasketId = basketId, NumberOfItems = basket.Lines.Count, UserId = basket.UserId };
+        return new Basket() { 
+            BasketId = basketId, 
+            NumberOfItems = basket.Lines.Count, 
+            UserId = basket.UserId };
     }
 
     public async Task<IEnumerable<BasketLine>> GetLinesForBasket(Guid basketId)
@@ -110,7 +113,7 @@ public class DaprStateStoreShoppingBasket : IShoppingBasketService
         return default(T);
     }
 
-    private async Task<StateStoreBasket?> GetBasketFromStateStore(Guid basketId)
+    private async Task<StateStoreBasket> GetBasketFromStateStore(Guid basketId)
     {
         var key = $"basket-{basketId}";
         var basket = await GetFromStateStore<StateStoreBasket>(key);
@@ -147,7 +150,10 @@ public class DaprStateStoreShoppingBasket : IShoppingBasketService
     public async Task ClearBasket(Guid basketId)
     {
         var basket = await GetBasketFromStateStore(basketId);
-        basket.Lines.Clear();
-        await SaveBasketToStateStore(basket);
+        if (basket != null)
+        {
+            basket.Lines.Clear();
+            await SaveBasketToStateStore(basket);
+        }
     }
 }

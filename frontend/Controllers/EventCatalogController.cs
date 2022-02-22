@@ -24,13 +24,12 @@ public class EventCatalogController : Controller
     {
         var currentBasketId = Request.Cookies.GetCurrentBasketId(settings);
 
-        var getBasket = currentBasketId == Guid.Empty ? Task.FromResult<Basket?>(null) :
-            shoppingBasketService.GetBasket(currentBasketId);
+        var getBasket = shoppingBasketService.GetBasket(currentBasketId);
         var getEvents = eventCatalogService.GetAll();
 
         await Task.WhenAll(new Task[] { getBasket, getEvents });
 
-        var numberOfItems = getBasket.Result == null ? 0 : getBasket.Result.NumberOfItems;
+        var numberOfItems = getBasket.Result.NumberOfItems;
 
         return View(
             new EventListModel

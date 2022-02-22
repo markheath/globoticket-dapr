@@ -37,17 +37,14 @@ public class InMemoryShoppingBasketService : IShoppingBasketService
         return basket.Add(basketLine, @event);
     }
 
-    public async Task<Basket?> GetBasket(Guid basketId)
+    public async Task<Basket> GetBasket(Guid basketId)
     {
-        if (!baskets.TryGetValue(basketId, out var basket))
-        {
-            return null;
-        }
+        baskets.TryGetValue(basketId, out var basket);
         return new Basket()
         {
             BasketId = basketId,
-            NumberOfItems = basket.Lines.Count,
-            UserId = basket.UserId
+            NumberOfItems = basket?.Lines?.Count ?? 0,
+            UserId = basket?.UserId ?? Guid.Empty
         };
 
     }

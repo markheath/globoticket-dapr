@@ -1,7 +1,7 @@
 ﻿@model GloboTicket.Frontend.Models.Api.Event
 <tr>
     <td>
-        <img class="artistPic" src="@Model.ImageUrl" alt="Artist pic" />
+        <img class="artistPic" src="@Model!.ImageUrl" alt="Artist pic" />
     </td>
     <td>
         @Model.Date.ToShortDateString()

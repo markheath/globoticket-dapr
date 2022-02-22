@@ -15,10 +15,10 @@ if (String.IsNullOrEmpty(daprPort))
     // we're not running in DAPR - use regular service invocation and an in-memory basket
     Console.WriteLine("NOT USING DAPR");
     builder.Services.AddHttpClient<IEventCatalogService, EventCatalogService>((sp, c) =>
-        c.BaseAddress = new Uri(sp.GetService<IConfiguration>()["ApiConfigs:EventCatalog:Uri"]));
+        c.BaseAddress = new Uri(sp.GetService<IConfiguration>()?["ApiConfigs:EventCatalog:Uri"] ?? throw new InvalidOperationException("Missing config")));
     builder.Services.AddSingleton<IShoppingBasketService, InMemoryShoppingBasketService>();
     builder.Services.AddHttpClient<IOrderSubmissionService, HttpOrderSubmissionService>((sp, c) =>
-        c.BaseAddress = new Uri(sp.GetService<IConfiguration>()["ApiConfigs:Ordering:Uri"]));
+        c.BaseAddress = new Uri(sp.GetService<IConfiguration>()?["ApiConfigs:Ordering:Uri"] ?? throw new InvalidOperationException("Missing config")));
 }
 else
 {

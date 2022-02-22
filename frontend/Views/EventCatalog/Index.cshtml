@@ -1,7 +1,7 @@
 ﻿@model GloboTicket.Frontend.Models.View.EventListModel
 
 <div class="row">
-    @if (Model.Events.Count() == 0)
+    @if (Model!.Events.Count() == 0)
     {
         <text>No events were found.</text>
     }
@@ -25,5 +25,5 @@
 </div>
 
 @section Widget {
-    <partial name="_ShoppingCartWidget" model="@Model.NumberOfItems" />
+    <partial name="_ShoppingCartWidget" model="@Model!.NumberOfItems" />
 }
