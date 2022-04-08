@@ -60,7 +60,7 @@ dapr init -k
 dapr status -k
 
 # or to upgrade an existing deployment
-dapr upgrade -k --runtime-version 1.6.0
+dapr upgrade -k --runtime-version 1.7.0
 
 ### STEP 5 - get containers pushed to docker
 
@@ -125,7 +125,7 @@ kubectl apply -f .\deploy\ordering.yaml
 kubectl apply -f .\deploy\catalog.yaml # n.b. to remove its kubectl delete
 
 # or to restart a service if its already been deployed
-kubectl rollout restart deployment catalog
+kubectl rollout restart deployment frontend
 
 kubectl get deployments
 kubectl get pods

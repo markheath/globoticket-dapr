@@ -2,14 +2,14 @@
 
 This application is intended to demonstrate the basics of using Dapr to build a microservices application. It is the demo project for the Pluralsight Dapr 1 Fundamentals course, by Mark Heath.
 
-This version of the code is using Dapr 1.6
+This version of the code is using Dapr 1.7
 
 ## Running the app locally
 The recommended way for running locally is to use self-hosted mode (option 1). I have also managed to get it running in Docker Compose, although that option has not been tested so much.
 
 ### Option 1 - Running self-hosted from the command line
 
-**Prerequisites:** You need to have the [Dapr CLI installed](https://docs.dapr.io/getting-started/install-dapr-cli/), as well as Docker installed (e.g. Docker Desktop for Windows), and to have set up dapr in self-hosted mode with `dapr init`
+**Prerequisites:** You need to have the [Dapr CLI installed](https://docs.dapr.io/getting-started/install-dapr-cli/), as well as Docker installed (e.g. Docker Desktop for Windows), and to have set up Dapr in self-hosted mode with `dapr init`
 
 And in order to use the email sending feature, you'll want a local container running maildev, which you can start using: `docker run -p 1080:80 -p 1025:25 maildev/maildev`. If you need a dummy credit card number to place an order you can use `4242424242424242` or `5555555555554444`
 
