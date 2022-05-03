@@ -1,0 +1,14 @@
+componentType: state.azure.blobstorage
+version: v1
+metadata:
+- name: accountName
+  value: <STORAGE_ACCOUNT_NAME>
+- name: accountKey
+  secretRef: storage-account-key
+- name: containerName
+  value: statestore
+secrets:
+- name: storage-account-key
+  value: "<STORAGE_ACCOUNT_KEY>"
+scopes:
+- frontend

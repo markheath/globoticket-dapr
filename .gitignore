@@ -5,3 +5,4 @@ node_modules/
 *.user
 *.tmp
 .vs/
+*.tmp.yaml
