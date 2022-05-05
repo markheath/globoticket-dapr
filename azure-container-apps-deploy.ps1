@@ -107,6 +107,7 @@ az containerapp env dapr-component set `
 # https://docs.microsoft.com/en-us/azure/container-apps/manage-secrets?tabs=azure-cli
 
 # STEP 5 - deploy apps
+# maildev does not need to be Dapr enabled. It listens on 1025 for SMTP and 1080
 az containerapp create `
   --name maildev `
   --resource-group $RESOURCE_GROUP `
