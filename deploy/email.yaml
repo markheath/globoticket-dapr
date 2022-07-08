@@ -9,7 +9,7 @@ spec:
   - name: host
     value: maildev
   - name: port
-    value: 25
+    value: 1025
   - name: user
     value: "_username"
   - name: password
