@@ -39,4 +39,10 @@ You will be able to access Zipkin traces on: `http://localhost:9412/zipkin/`
 - The **ordering** microservice takes new orders. It receives the order via pub-sub messaging. It sends an email to thank the user for purchasing. A dapr output
 
 ## Deploying to Kubernetes (AKS) on Azure
-The `ask-deploy.ps1` PowerShell script shows the steps needed to deploy this to Azure. Don't run this directly. You'll need the Azure CLI installed, and you'll also need to pick unique resource names that are available. The script includes example commands you can use to check it's all working as expected.
+The `aks-deploy.ps1` PowerShell script shows the steps needed to deploy this to Azure. Don't run this directly. You'll need the Azure CLI installed, and you'll also need to pick unique resource names that are available. The script includes example commands you can use to check it's all working as expected.
+
+## Troubleshooting notes
+
+- the `maildev` docker image switched its default ports from 80 & 25 to 1080 and 1025, so make sure you're using the correct email YAML component definition from this repo if you're having troubles with those
+- there is a [known issue](https://github.com/dapr/dapr/issues/3256) when running locally with the mDNS resolution in Dapr where if you are running certain VPNs or CISCO networking apps it can cause it to fail. The workaround is usually to temporarily stop the offending software. In the GloboTicket app, this error would cause the homepage to fail to load, unable to communicate with the catalog service.
+- When running on AKS, after you've upgraded Dapr, it's a good idea to restart the deployments. The AKS demo script has an example.
