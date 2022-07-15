@@ -1,0 +1,13 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: consul
+  namespace: default
+spec:
+  type: state.consul
+  version: v1
+  metadata:
+  - name: datacenter
+    value: dc1 # Required. Example: dc1
+  - name: httpAddr
+    value: 127.0.0.1:8500 # Required. Example: "consul.default.svc.cluster.local:8500"

@@ -44,5 +44,60 @@ The `aks-deploy.ps1` PowerShell script shows the steps needed to deploy this to 
 ## Troubleshooting notes
 
 - the `maildev` docker image switched its default ports from 80 & 25 to 1080 and 1025, so make sure you're using the correct email YAML component definition from this repo if you're having troubles with those
-- there is a [known issue](https://github.com/dapr/dapr/issues/3256) when running locally with the mDNS resolution in Dapr where if you are running certain VPNs or CISCO networking apps it can cause it to fail. The workaround is usually to temporarily stop the offending software. In the GloboTicket app, this error would cause the homepage to fail to load, unable to communicate with the catalog service.
+- there is a [known issue](https://github.com/dapr/dapr/issues/3256) when running locally with the mDNS resolution in Dapr where if you are running certain VPNs or CISCO networking apps it can cause it to fail. The workaround is usually to temporarily stop the offending software. In the GloboTicket app, this error would cause the homepage to fail to load, unable to communicate with the catalog service. An other workaround is to use consul for name resolution is to use Consul (instructions below)
+
 - When running on AKS, after you've upgraded Dapr, it's a good idea to restart the deployments. The AKS demo script has an example.
+
+### Using Consul for self-hosted mode
+
+1. Start the consul container with `docker run -d -p 8500:8500 --name=dev-consul -e CONSUL_BIND_INTERFACE=eth0 consul`
+2. Ensure you can visit it at http://127.0.0.1/8500
+3. Create a `daprConfig.yaml` file with the following contents (or update your existing config to include the `nameResolution` section)
+
+```yaml
+apiVersion: dapr.io/v1alpha1
+kind: Configuration
+metadata:
+  name: daprConfig
+spec:
+  nameResolution:
+    component: "consul"
+    configuration:
+      selfRegister: true
+  tracing:
+    samplingRate: "1"
+    zipkin:
+      endpointAddress: http://localhost:9411/api/v2/spans
+```
+
+4. Create a `consul.yaml` file in your local components folder with the following contents
+
+```yaml
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: consul
+  namespace: default
+spec:
+  type: state.consul
+  version: v1
+  metadata:
+  - name: datacenter
+    value: dc1 # Required. Example: dc1
+  - name: httpAddr
+    value: 127.0.0.1:8500 # Required. Example: "consul.default.svc.cluster.local:8500"
+```
+
+5. Update your `dapr run` command to point to the updated config and components folder. Here's an example powershell script I used:
+
+```powershell
+dapr run `
+    --app-id frontend `
+    --app-port 5266 `
+    --dapr-http-port 3500 `
+    --components-path ../dapr/components `
+    --config ../dapr/components/daprConfig.yaml `
+    dotnet run
+```
+
+6. Start your services and check that they appear in the consul UI at http://127.0.0.1/8500
