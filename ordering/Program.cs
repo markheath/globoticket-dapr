@@ -1,3 +1,4 @@
+using Dapr.Client;
 using GloboTicket.Ordering.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,7 +10,13 @@ builder.Services.AddControllers().AddDapr();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddTransient<EmailSender>();
+//builder.Services.AddTransient<EmailSender>();
+
+builder.Services.AddSingleton<EmailSender>(sc => 
+        new EmailSender(
+                sc.GetService<DaprClient>()!,
+                sc.GetService<ILogger<EmailSender>>()!, 
+                DaprClient.CreateInvokeHttpClient("catalog")));
 
 var app = builder.Build();
 
