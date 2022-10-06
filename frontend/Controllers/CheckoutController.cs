@@ -28,7 +28,14 @@ public class CheckoutController : Controller
     {
         var currentBasketId = Request.Cookies.GetCurrentBasketId(settings);
 
-        return View(new CheckoutViewModel() { BasketId = currentBasketId });
+        // prefill to make demos easier
+        var viewModel = new CheckoutViewModel() { 
+            BasketId = currentBasketId , Name = "A Customer", 
+            Address = "123 Example Street", Town = "Daprton",
+            PostalCode = "DA1 2PR", Email = "customer@example.com",
+            CreditCard = "4242424242424242", CreditCardDate = "10/26"
+            };
+        return View(viewModel);
     }
 
     public IActionResult Thanks()
