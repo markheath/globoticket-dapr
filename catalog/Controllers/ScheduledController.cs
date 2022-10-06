@@ -20,7 +20,8 @@ public class ScheduledController : ControllerBase
     [HttpPost("", Name = "Scheduled")]
     public void OnSchedule()
     {
-        logger.LogInformation("scheduled endpoint called");
-        eventRepository.UpdateSpecialOffer();
+        var specialOfferEvent = eventRepository.UpdateSpecialOffer();
+        var now = DateTime.Now.ToString("HH:mm:ss");
+        logger.LogInformation($"{now} scheduled endpoint called: {specialOfferEvent.Name} is now on sale for {specialOfferEvent.Price}");
     }
 }

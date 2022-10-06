@@ -20,7 +20,13 @@
             @Model.Description
         </div>
         <div class="row mt-5">
-            <h3><span class="bold">$@Model.Price</span></h3><span class="mt-1">&nbsp;&nbsp;&nbsp; PER TICKET</span>
+            <span>
+            <span class="bold big">$@Model.Price</span>
+            <span class="mt-1"> PER TICKET &nbsp;</span>
+            @if(Model.IsOnSpecialOffer) {
+                <span class="specialOffer">SPECIAL&nbsp;OFFER</span>
+            }
+            </span>
         </div>
     </div>
 </div>

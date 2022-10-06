@@ -8,6 +8,9 @@
     </td>
     <td>
         @Model.Name
+        @if(Model.IsOnSpecialOffer) {
+            <span class="specialOffer">SPECIAL&nbsp;OFFER</span>
+        }
     </td>
     <td>
         @Model.Artist

@@ -129,3 +129,11 @@ footer {
   line-height: 60px;
   text-align: center
 }
+
+.specialOffer {
+  background-color: green;
+  border-radius: 4px;
+  color: white;
+  font-weight: bold;
+  padding: 3px;
+}

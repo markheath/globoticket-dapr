@@ -98,7 +98,7 @@ public class EventRepository : IEventRepository
     }
 
     // scheduled task calls this periodically to put one item on special offer
-    public void UpdateSpecialOffer()
+    public Event UpdateSpecialOffer()
     {
         // reset all tickets to their default
         events.Clear();
@@ -108,5 +108,7 @@ public class EventRepository : IEventRepository
         var specialOfferEvent = events[random.Next(0,events.Count)];
         // 20 percent off
         specialOfferEvent.Price = (int)(specialOfferEvent.Price * 0.8);
+        specialOfferEvent.IsOnSpecialOffer = true;
+        return specialOfferEvent;
     }
 }
