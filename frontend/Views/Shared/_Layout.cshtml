@@ -30,7 +30,9 @@
             @RenderBody()
         </main>
     </div>
-
+    <footer>
+        <a href="https://github.com/markheath/globoticket-dapr">GloboTicket Dapr</a> Version: @(GetType().Assembly.GetName().Version) Machine: @System.Environment.MachineName
+    </footer>
     @RenderSection("Scripts", required: false)
 </body>
 </html>

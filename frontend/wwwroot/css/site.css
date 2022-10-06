@@ -115,3 +115,17 @@ header {
     padding-top: 20px;
     padding-bottom: 20px;
 }
+
+/* https://stackoverflow.com/a/20352949/7532 */
+body{ min-height:100vh; margin:0; position:relative; }
+
+footer {
+  background-color: #000000;
+  color: #fff;
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  white-space: nowrap;
+  line-height: 60px;
+  text-align: center
+}
