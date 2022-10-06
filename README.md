@@ -11,7 +11,7 @@ The recommended way for running locally is to use self-hosted mode (option 1). I
 
 **Prerequisites:** You need to have the [Dapr CLI installed](https://docs.dapr.io/getting-started/install-dapr-cli/), as well as Docker installed (e.g. Docker Desktop for Windows), and to have set up Dapr in self-hosted mode with `dapr init`
 
-And in order to use the email sending feature, you'll want a local container running maildev, which you can start using: `docker run -p 1080:80 -p 1025:25 maildev/maildev`. If you need a dummy credit card number to place an order you can use `4242424242424242` or `5555555555554444`
+And in order to use the email sending feature, you'll want a local container running maildev, which you can start using: `docker run -d -p 1080:1080 -p 1025:1025 maildev/maildev`. If you need a dummy credit card number to place an order you can use `4242424242424242` or `5555555555554444`
 
 Open three terminal windows. In the `frontend` folder run `start-self-hosted.ps1`. Do the same in the `catalog` and `ordering` folders. The ports used are specified in the PowerShell start up scripts. The frontend app will be available at `http://localhost:5266/`. The catalog service will be at `http://localhost:5016/swagger/index.html`, and the ordering service at `http://localhost:5293/swagger/index.html`
 
