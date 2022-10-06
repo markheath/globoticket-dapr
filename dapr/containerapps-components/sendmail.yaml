@@ -2,7 +2,7 @@ componentType: bindings.smtp
 version: v1
 metadata:
   - name: host
-    value: maildev
+    value: <MAILDEV_SERVER>
   - name: port
     value: 1025
   - name: user

@@ -99,25 +99,24 @@ az containerapp env dapr-component set `
   --dapr-component-name shopstate `
   --yaml "$COMPONENTS_FOLDER/statestore.tmp.yaml"
 
+# we are going to use Azure container instances for the
+$MAILDEV_CONTAINER_INSTANCE_NAME = "aci-maildev"
+$MAILDEV_DNS = "globoticketmaildev"
+az container create -g $RESOURCE_GROUP -n $MAILDEV_CONTAINER_INSTANCE_NAME `
+  --image maildev/maildev `
+  --ports 1080 1025 --dns-name-label $MAILDEV_DNS
+
+$MAILDEV_SERVER = az container show -g $RESOURCE_GROUP -n $MAILDEV_CONTAINER_INSTANCE_NAME --query ipAddress.fqdn -o tsv
+(Get-Content -Path "$COMPONENTS_FOLDER/sendmail.yaml" -Raw).Replace('<MAILDEV_SERVER>',$MAILDEV_SERVER).Replace('<STORAGE_ACCOUNT_NAME>',$STORAGE_ACCOUNT) | Set-Content -Path "$COMPONENTS_FOLDER/sendmail.tmp.yaml" -NoNewline
+
 az containerapp env dapr-component set `
   --name $CONTAINERAPPS_ENVIRONMENT --resource-group $RESOURCE_GROUP `
   --dapr-component-name sendmail `
-  --yaml "$COMPONENTS_FOLDER/sendmail.yaml"
+  --yaml "$COMPONENTS_FOLDER/sendmail.tmp.yaml"
 
 # https://docs.microsoft.com/en-us/azure/container-apps/manage-secrets?tabs=azure-cli
 
 # STEP 5 - deploy apps
-# maildev does not need to be Dapr enabled. It listens on 1025 for SMTP and 1080
-az containerapp create `
-  --name maildev `
-  --resource-group $RESOURCE_GROUP `
-  --environment $CONTAINERAPPS_ENVIRONMENT `
-  --image maildev/maildev `
-  --target-port 1080 `
-  --ingress 'external' `
-  --min-replicas 1 `
-  --max-replicas 1
-
 az containerapp create `
   --name frontend `
   --resource-group $RESOURCE_GROUP `
@@ -132,7 +131,6 @@ az containerapp create `
   --dapr-app-id frontend
 
 # https://github.com/microsoft/azure-container-apps/issues/147
-
 
 az containerapp create `
   --name catalog `
@@ -174,10 +172,9 @@ Start-Process "https://$FQDN"
 
 az containerapp logs show -n frontend -g $RESOURCE_GROUP
 az containerapp logs show -n catalog -g $RESOURCE_GROUP
+az containerapp logs show -n ordering -g $RESOURCE_GROUP
 
-$MAILDEV_SERVER = az containerapp show --name maildev --resource-group $RESOURCE_GROUP `
-  --query properties.configuration.ingress.fqdn -o tsv
-Start-Process "https://$MAILDEV_SERVER"
+Start-Process "http://$($MAILDEV_SERVER):1080"
 
 # Log analytics query
 # ContainerAppConsoleLogs_CL | where ContainerAppName_s == "ordering"
