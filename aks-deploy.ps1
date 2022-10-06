@@ -151,6 +151,9 @@ $FRONTEND_IP = kubectl get svc frontend -o jsonpath="{.status.loadBalancer.ingre
 # frontend is running on port 8080
 Start-Process "http://$($FRONTEND_IP):8080"
 
+# note we are also using: https://larry.claman.net/post/2021-04-04-aks-dns-naming/ to get a DNS name
+# http://globoticket.westeurope.cloudapp.azure.com:8080/ should also work
+
 # let's check in zipkin - make sure we're looking at the right zipkin (the one in AKS) by using a different port number
 kubectl port-forward svc/zipkin 9412:9411
 # navigate to http://localhost:9412

@@ -5,6 +5,9 @@ metadata:
   name: frontend
   labels:
     app: frontend
+  annotations: 
+    # https://larry.claman.net/post/2021-04-04-aks-dns-naming/
+    service.beta.kubernetes.io/azure-dns-label-name: globoticket
 spec:
   selector:
     app: frontend
