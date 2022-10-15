@@ -60,7 +60,8 @@ dapr init -k
 dapr status -k
 
 # or to upgrade an existing deployment
-dapr upgrade -k --runtime-version 1.8.0
+dapr upgrade -k --runtime-version 1.9.0
+# note after upgrade, all deployments should be restarted to pick up latest sidecar version
 
 ### STEP 5 - get containers pushed to docker
 

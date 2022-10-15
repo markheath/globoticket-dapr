@@ -2,7 +2,7 @@
 
 This application is intended to demonstrate the basics of using Dapr to build a microservices application. It is the demo project for the [Pluralsight Dapr 1 Fundamentals](https://pluralsight.pxf.io/c/1192349/424552/7490?u=www%2Epluralsight%2Ecom%2Fcourses%2Fdapr-1-fundamentals) course, by Mark Heath.
 
-This version of the code is using Dapr 1.8
+This version of the code is using Dapr 1.9
 
 ## Running the app locally
 The recommended way for running locally is to use self-hosted mode (option 1). I have also managed to get it running in Docker Compose, although that option has not been tested so much.
