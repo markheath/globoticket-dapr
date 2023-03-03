@@ -5,17 +5,14 @@ metadata:
   name: frontend
   labels:
     app: frontend
-  annotations: 
-    # https://larry.claman.net/post/2021-04-04-aks-dns-naming/
-    service.beta.kubernetes.io/azure-dns-label-name: globoticket
 spec:
   selector:
     app: frontend
   ports:
   - protocol: TCP
-    port: 80
-    targetPort: 80
-  type: LoadBalancer
+    port: 8080
+    targetPort: 80    
+  type: ClusterIP # note this used to be LoadBalancer, but now we're using Caddy for ingress
 
 ---
 apiVersion: apps/v1

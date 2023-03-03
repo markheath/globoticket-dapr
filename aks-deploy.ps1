@@ -23,6 +23,26 @@ az aks get-credentials -g $RESOURCEGROUP -n $AKS_NAME --overwrite-existing
 # check kubectl config is as expected
 kubectl config current-context
 
+### STEP 1B - INSTALL AN INGRESS CONTROLLER
+# note you will need Helm installed
+# and get AKS to generate a namespace for us
+# https://larry.claman.net/post/2021-04-04-aks-dns-naming/
+
+# create a namespace
+kubectl create namespace caddy-system
+# install Caddy
+$MY_EMAIL="your-email@example.com" # needed for LetsEncrypt - update with your email
+$DNS_PREFIX="globoticket123" # need a unique value here
+helm install `
+  --namespace=caddy-system `
+  --repo https://caddyserver.github.io/ingress/ `
+  --atomic `
+  mycaddy `
+  caddy-ingress-controller `
+   --set ingressController.config.email=$MY_EMAIL `
+   --set loadBalancer.annotations."service\.beta\.kubernetes\.io/azure-dns-label-name"=$DNS_PREFIX
+```
+
 ### STEP 2 - set up blob storage for state
 # $RAND = -join ((48..57) + (97..122) | Get-Random -Count 6 | % {[char]$_})
 $STORAGE_ACCOUNT = "globoticketstate"
@@ -147,13 +167,20 @@ az aks browse -n $AKS_NAME -g $RESOURCEGROUP
 
 ### STEP 11 - TEST THE APP
 
-$FRONTEND_IP = kubectl get svc frontend -o jsonpath="{.status.loadBalancer.ingress[*].ip}"
-
-# frontend is running on port 80 now
-Start-Process "http://$($FRONTEND_IP)"
+# we're using Caddy as ingress now, so there is no public IP 
+# access via a custom domain we've set up
+Start-Process "https://globoticket.markheath.net"
 
 # note we are also using: https://larry.claman.net/post/2021-04-04-aks-dns-naming/ to get a DNS name
-# http://globoticket.westeurope.cloudapp.azure.com/ should also work
+# so we can access via https://globoticket.westeurope.cloudapp.azure.com/ with Caddy providing a 
+# Let's Encrpt certificate
+Start-Process "https://$DNS_PREFIX.$LOCATION.cloudapp.azure.com"
+
+
+# Note: this is how we'd access it via an IP address if we weren't using an ingress controller
+# $FRONTEND_IP = kubectl get svc frontend -o jsonpath="{.status.loadBalancer.ingress[*].ip}"
+# frontend is running on port 80 now
+# Start-Process "http://$($FRONTEND_IP)"
 
 # let's check in zipkin - make sure we're looking at the right zipkin (the one in AKS) by using a different port number
 kubectl port-forward svc/zipkin 9412:9411

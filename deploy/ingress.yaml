@@ -1,0 +1,33 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: globoticket
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: caddy
+spec:
+  rules:
+  # only set this up if you've pointed a custom domain with CNAME at the underlying cloudapp.azure.com domain
+  # or an A rule at the public IP of the Caddy load balancer
+  - host: globoticket.markheath.net 
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend
+            port:
+              number: 8080
+  # use this rule with the correct prefix and region if you just want to use the AKS domain name for the
+  # caddy load balancer
+  - host: globoticket.westeurope.cloudapp.azure.com 
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend
+            port:
+              number: 8080              
