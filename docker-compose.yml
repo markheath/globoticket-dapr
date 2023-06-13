@@ -19,7 +19,7 @@ services:
     networks:
       - globoticket-dapr
   catalog-dapr:
-    image: "daprio/daprd:1.10.0"
+    image: "daprio/daprd:1.11.0"
     command: [
       "./daprd",
      "-app-id", "catalog",
@@ -45,7 +45,7 @@ services:
       - globoticket-dapr
 
   frontend-dapr:
-    image: "daprio/daprd:1.10.0"
+    image: "daprio/daprd:1.11.0"
     command: [
       "./daprd",
      "-app-id", "frontend",
@@ -70,7 +70,7 @@ services:
     networks:
       - globoticket-dapr
   ordering-dapr:
-    image: "daprio/daprd:1.10.0"
+    image: "daprio/daprd:1.11.0"
     command: [
       "./daprd",
      "-app-id", "ordering",
