@@ -1,3 +1,4 @@
+$Host.UI.RawUI.WindowTitle = "Catalog"
 dapr run `
     --app-id catalog `
     --app-port 5016 `

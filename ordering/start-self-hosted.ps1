@@ -1,3 +1,4 @@
+$Host.UI.RawUI.WindowTitle = "Ordering"
 dapr run `
     --app-id ordering `
     --app-port 5293 `

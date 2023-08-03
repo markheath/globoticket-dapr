@@ -1,3 +1,4 @@
+$Host.UI.RawUI.WindowTitle = "Front end"
 dapr run `
     --app-id frontend `
     --app-port 5266 `
