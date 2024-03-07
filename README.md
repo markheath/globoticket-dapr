@@ -2,9 +2,10 @@
 
 This application is intended to demonstrate the basics of using Dapr to build a microservices application. It is the demo project for the [Pluralsight Dapr 1 Fundamentals](https://pluralsight.pxf.io/c/1192349/424552/7490?u=www%2Epluralsight%2Ecom%2Fcourses%2Fdapr-1-fundamentals) course, by Mark Heath.
 
-This version of the code is using Dapr 1.11
+This version of the code is using Dapr 1.13
 
 ## Running the app locally
+
 The recommended way for running locally is to use self-hosted mode (option 1). I have also managed to get it running in Docker Compose, although that option has not been tested so much.
 
 ### Option 1 - Running self-hosted from the command line
@@ -28,9 +29,9 @@ You will be able to access Zipkin traces on: `http://localhost:9412/zipkin/`
 You can see the emails sent by the ordering service using maildev on: `http://localhost:1080/#/`
 
 ### Option 3 - Running with Docker Compose in Visual Studio 2022
+
 Set the startup project to Docker Compose. If you've used option 1, make sure the other Docker Compose containers are removed or there will be a name conflict. The frontend service will be at `https://localhost:5001`.  The catalog service will be at `http://localhost:5003/swagger/index.html`, and the ordering service at `http://localhost:5004/swagger/index.html`.
 You will be able to access Zipkin traces on: `http://localhost:9412/zipkin/`
-
 
 ## Architecture Overview
 
@@ -39,6 +40,7 @@ You will be able to access Zipkin traces on: `http://localhost:9412/zipkin/`
 - The **ordering** microservice takes new orders. It receives the order via pub-sub messaging. It sends an email to thank the user for purchasing. A dapr output
 
 ## Deploying to Kubernetes (AKS) on Azure
+
 The `aks-deploy.ps1` PowerShell script shows the steps needed to deploy this to Azure. Don't run this directly. You'll need the Azure CLI installed, and you'll also need to pick unique resource names that are available. The script includes example commands you can use to check it's all working as expected.
 
 ## Troubleshooting notes
