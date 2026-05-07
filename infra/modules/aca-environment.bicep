@@ -223,35 +223,30 @@ resource scheduledComponent 'Microsoft.App/managedEnvironments/daprComponents@20
 }
 
 // -------- sendmail: SMTP via the internal MailPit container app --------
-// Hostname is the env's internal DNS for the mailpit app. Creds are pulled
-// via the secretstore component (Key Vault-backed) so the component spec
-// has no plaintext credentials.
+// MailPit is reached by short app name. The `<app>.internal.<envdomain>`
+// FQDN resolves to the env's HTTP ingress proxy, which has no raw-TCP
+// listener in Consumption-only (no-VNet) envs — SMTP dials to it
+// black-hole and time out. The short name resolves to the app's
+// cluster-internal service IP and accepts raw TCP.
+//
+// No user/password: the Dapr SMTP binding uses Go's smtp.PlainAuth, which
+// refuses to transmit credentials over a non-TLS connection ("unencrypted
+// connection" error). MailPit runs with MP_SMTP_AUTH_ACCEPT_ANY and is
+// happy to accept unauthenticated mail, so we omit AUTH entirely.
 resource sendmailComponent 'Microsoft.App/managedEnvironments/daprComponents@2024-03-01' = {
   parent: acaEnv
   name: 'sendmail'
   properties: {
     componentType: 'bindings.smtp'
     version: 'v1'
-    secretStoreComponent: 'secretstore'
     metadata: [
       {
         name: 'host'
-        // ACA's internal DNS shortname works for Dapr service invocation
-        // but not for plain TCP binding traffic like SMTP. Use the fully
-        // qualified internal FQDN so the SMTP dial resolves correctly.
-        value: 'mailpit.internal.${acaEnv.properties.defaultDomain}'
+        value: 'mailpit'
       }
       {
         name: 'port'
         value: '1025'
-      }
-      {
-        name: 'user'
-        secretRef: 'smtp-user'
-      }
-      {
-        name: 'password'
-        secretRef: 'smtp-password'
       }
       {
         name: 'skipTLSVerify'
@@ -262,9 +257,6 @@ resource sendmailComponent 'Microsoft.App/managedEnvironments/daprComponents@202
       'ordering'
     ]
   }
-  dependsOn: [
-    secretstoreComponent
-  ]
 }
 
 output environmentId string = acaEnv.id

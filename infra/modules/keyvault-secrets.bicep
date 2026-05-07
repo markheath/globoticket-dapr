@@ -66,24 +66,6 @@ resource redisPasswordSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
   }
 }
 
-// SMTP creds aren't real secrets — MailPit accepts anything. They live in
-// the vault so the email.yml component shape matches local dev.
-resource smtpUserSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  parent: keyVault
-  name: 'smtp-user'
-  properties: {
-    value: '_username'
-  }
-}
-
-resource smtpPasswordSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  parent: keyVault
-  name: 'smtp-password'
-  properties: {
-    value: '_password'
-  }
-}
-
 // Recorded for reference; consumed via MI auth in the pubsub component
 // so the value here is informational only.
 resource serviceBusNamespaceSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {

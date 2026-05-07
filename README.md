@@ -112,7 +112,7 @@ The headline change vs. the previous deploy scripts is that **no plaintext crede
 - ✅ **ACR pulls** use the user-assigned managed identity (no admin user, no docker login)
 - ✅ **Service Bus** access is via managed identity — the `pubsub` Dapr component carries only `namespaceName` + `azureClientId`, no connection string
 - ✅ **Key Vault** access is via managed identity, used by the `secretstore` Dapr component and by the apps directly through ACA's Key Vault secret references
-- ✅ **Postgres password and Redis access key** are stored in Key Vault. The `orderstore`, `shopstate`, `workflowstate`, and `sendmail` Dapr components reference them via `secretRef` + `keyVaultUrl`. The catalog's connection string is delivered to the container the same way
+- ✅ **Postgres password and Redis access key** are stored in Key Vault. The `orderstore`, `shopstate`, and `workflowstate` Dapr components reference them via `secretRef` + `keyVaultUrl`. The catalog's connection string is delivered to the container the same way
 - ⚠️ **Postgres** still authenticates with a password (held in Key Vault). Switching to Microsoft Entra auth requires a post-deploy hook that registers the MI as a Postgres role plus a token-fetching `PasswordProvider` in the catalog. That's the obvious next hardening step.
 - ⚠️ **Redis** also authenticates with an access key. Entra auth on Azure Cache for Redis is supported on the Premium SKU and via Redis Enterprise; switching would require an SKU bump.
 - ⚠️ All managed services have **public networking**. Adding private endpoints + private DNS zones is a separate hardening pass.

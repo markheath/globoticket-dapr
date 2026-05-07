@@ -94,10 +94,13 @@ resource aspireDashboard 'Microsoft.App/containerApps@2024-03-01' = {
 }
 
 // -------- MailPit (internal only, smtp + ui) --------
-// Two ports: 1025 (SMTP, internal-only TCP) and 8025 (web UI, internal HTTP).
-// The web UI is reachable from the frontend ACA only by ingress proxy; for
-// demos we additionally expose it externally via the dashboard so the
-// course author can read confirmation emails. (See README.)
+// Main ingress is TCP on 1025 so the Dapr SMTP binding from ordering's
+// sidecar can speak raw SMTP wire protocol — additional ports inherit the
+// main transport, so we couldn't keep main as HTTP and tunnel SMTP through
+// it. The web UI on 8025 is exposed as an additional internal port; ACA
+// Consumption-only envs don't allow external TCP ingress without a custom
+// VNet, so the UI is not publicly reachable here. A small public-facing
+// proxy app can be layered on later to surface the UI for demos.
 resource mailpit 'Microsoft.App/containerApps@2024-03-01' = {
   name: 'mailpit'
   location: location
@@ -112,17 +115,15 @@ resource mailpit 'Microsoft.App/containerApps@2024-03-01' = {
     environmentId: acaEnv.id
     configuration: {
       ingress: {
-        external: true
-        targetPort: 8025
-        transport: 'http'
+        external: false
+        targetPort: 1025
+        exposedPort: 1025
+        transport: 'tcp'
         additionalPortMappings: [
           {
-            // SMTP port reachable internally only — Dapr SMTP binding from
-            // ordering's sidecar dials this. ACA Consumption-only envs
-            // don't allow external additional ports without a custom VNet.
             external: false
-            targetPort: 1025
-            exposedPort: 1025
+            targetPort: 8025
+            exposedPort: 8025
           }
         ]
       }
@@ -373,4 +374,3 @@ resource frontend 'Microsoft.App/containerApps@2024-03-01' = {
 
 output frontendUrl string = 'https://${frontend.properties.configuration.ingress.fqdn}'
 output dashboardUrl string = 'https://${aspireDashboard.properties.configuration.ingress.fqdn}'
-output mailpitUrl string = 'https://${mailpit.properties.configuration.ingress.fqdn}'
