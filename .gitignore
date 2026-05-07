@@ -6,3 +6,10 @@ node_modules/
 *.tmp
 .vs/
 *.tmp.yaml
+
+# Bicep build artefacts
+infra/main.json
+infra/preflight-*.bicepparam
+
+# azd local environment state
+.azure/

@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+name: globoticket-dapr
+metadata:
+  template: globoticket-dapr@1.0.0
+
+infra:
+  provider: bicep
+  path: infra
+  module: main
+
+services:
+  catalog:
+    project: ./catalog
+    language: dotnet
+    host: containerapp
+    docker:
+      path: ./Dockerfile
+      context: ../
+  ordering:
+    project: ./ordering
+    language: dotnet
+    host: containerapp
+    docker:
+      path: ./Dockerfile
+      context: ../
+  frontend:
+    project: ./frontend
+    language: dotnet
+    host: containerapp
+    docker:
+      path: ./Dockerfile
+      context: ../

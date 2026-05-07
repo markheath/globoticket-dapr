@@ -1,0 +1,96 @@
+// Pushes secrets into the Key Vault. The Dapr components and container
+// apps read these via the user-assigned MI, so neither component YAML
+// nor container env vars ever contain the actual values.
+
+param keyVaultName string
+
+param postgresFqdn string
+param postgresAdminLogin string = 'pgadmin'
+@secure()
+param postgresPassword string
+param redisHostname string
+@secure()
+param redisPassword string
+param serviceBusNamespace string
+
+resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
+  name: keyVaultName
+}
+
+// Catalog uses Aspire's Npgsql integration: AddNpgsqlDbContext("catalogdb")
+// reads ConnectionStrings__catalogdb directly. The full connection string
+// is the simplest unit to swap on rotation.
+resource catalogConnectionString 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  parent: keyVault
+  name: 'catalog-connection-string'
+  properties: {
+    value: 'Host=${postgresFqdn};Port=5432;Database=catalogdb;Username=${postgresAdminLogin};Password=${postgresPassword};SSL Mode=Require;Trust Server Certificate=true'
+    contentType: 'text/plain'
+  }
+}
+
+// Dapr orderstore component reads this directly via secretRef.
+resource orderingConnectionString 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  parent: keyVault
+  name: 'ordering-connection-string'
+  properties: {
+    value: 'host=${postgresFqdn} port=5432 user=${postgresAdminLogin} password=${postgresPassword} dbname=orderingdb sslmode=require'
+    contentType: 'text/plain'
+  }
+}
+
+resource postgresPasswordSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  parent: keyVault
+  name: 'postgres-password'
+  properties: {
+    value: postgresPassword
+    contentType: 'text/plain'
+  }
+}
+
+resource redisHostSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  parent: keyVault
+  name: 'redis-hostname'
+  properties: {
+    value: redisHostname
+    contentType: 'text/plain'
+  }
+}
+
+resource redisPasswordSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  parent: keyVault
+  name: 'redis-password'
+  properties: {
+    value: redisPassword
+    contentType: 'text/plain'
+  }
+}
+
+// SMTP creds aren't real secrets — MailPit accepts anything. They live in
+// the vault so the email.yml component shape matches local dev.
+resource smtpUserSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  parent: keyVault
+  name: 'smtp-user'
+  properties: {
+    value: '_username'
+  }
+}
+
+resource smtpPasswordSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  parent: keyVault
+  name: 'smtp-password'
+  properties: {
+    value: '_password'
+  }
+}
+
+// Recorded for reference; consumed via MI auth in the pubsub component
+// so the value here is informational only.
+resource serviceBusNamespaceSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  parent: keyVault
+  name: 'service-bus-namespace'
+  properties: {
+    value: serviceBusNamespace
+    contentType: 'text/plain'
+  }
+}

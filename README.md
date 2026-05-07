@@ -62,9 +62,62 @@ Dapr components live in `dapr/components/`:
 
 The Aspire AppHost wires the same components folder into every Dapr sidecar via `DaprSidecarOptions.ResourcesPaths`. Component-level `scopes:` restrict the order and workflow stores to the `ordering` service only.
 
-## Deploying
+## Deploying to Azure Container Apps
 
-The `aks-deploy.ps1` and `azure-container-apps-deploy.ps1` scripts and the manifests under `deploy/` and `dapr/containerapps-components/` were last current for the Dapr 1.13 / .NET 8 era. They predate the move to PostgreSQL and the outbox pattern and are **out of date**. Bringing them back to parity is tracked as a separate piece of work — until that lands, treat the [`dapr-1-13`](https://github.com/markheath/globoticket-dapr/tree/dapr-1-13) branch as the source of truth for working K8s/ACA deploys.
+Deployment is driven by the [Azure Developer CLI (`azd`)](https://learn.microsoft.com/azure/developer/azure-developer-cli/). The Bicep templates under `infra/` provision a single resource group containing all the managed services the demo needs (Service Bus, Postgres, Redis, Key Vault, ACR, Log Analytics, ACA environment, the Aspire dashboard, MailPit) and five Container Apps. The dapr components are declared inline in Bicep against the ACA managed environment.
+
+### Prerequisites
+
+- [Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd) (`azd`)
+- [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) (`az`)
+- Docker Desktop / Podman / Rancher Desktop (for `azd` to build container images locally before pushing to ACR)
+- An Azure subscription where you have permission to create resource groups, role assignments, and Postgres flexible servers
+
+### Deploy
+
+```powershell
+azd auth login
+azd up
+```
+
+`azd` prompts for an environment name (e.g. `gtdemo-abc` — pick something short, lowercase, unique to you so multiple devs can deploy in parallel) and a region (default `uksouth`). It then:
+
+1. Provisions the infrastructure in a single resource group named `rg-<env-name>`.
+2. Builds each .NET service (`catalog`, `ordering`, `frontend`) using its existing `Dockerfile` and pushes to the provisioned ACR.
+3. Updates the placeholder Container Apps to use the freshly-built images.
+4. Prints the frontend URL, the Aspire dashboard URL, and the MailPit web UI URL.
+
+Tearing it all back down:
+
+```powershell
+azd down --purge
+```
+
+The `--purge` flag also removes soft-deleted Key Vaults so the next deployment can reuse the same name.
+
+### Accessing the live app
+
+| Resource | How to reach it |
+|---|---|
+| **Frontend** | URL printed by `azd up` (also `azd env get-values \| Select-String FRONTEND_URL`) |
+| **MailPit web UI** (sent emails land here) | URL printed by `azd up` |
+| **Aspire dashboard** | URL printed by `azd up`. Auth uses the dashboard's BrowserToken mode — fetch the one-time login token from the dashboard's logs: `az containerapp logs show -n aspire-dashboard -g rg-<env> --tail 30` and look for the line that starts `Login to the dashboard at …` |
+| **Container logs** | `az containerapp logs show -n <app> -g rg-<env-name> --follow` |
+| **Postgres** | Public access is enabled but firewall is restricted to Azure-internal traffic — connect via psql in the Cloud Shell, or temporarily add your IP to the firewall |
+
+### Security posture in this drop
+
+The headline change vs. the previous deploy scripts is that **no plaintext credentials are baked into Container App env vars or Dapr component YAML**. Concretely:
+
+- ✅ **ACR pulls** use the user-assigned managed identity (no admin user, no docker login)
+- ✅ **Service Bus** access is via managed identity — the `pubsub` Dapr component carries only `namespaceName` + `azureClientId`, no connection string
+- ✅ **Key Vault** access is via managed identity, used by the `secretstore` Dapr component and by the apps directly through ACA's Key Vault secret references
+- ✅ **Postgres password and Redis access key** are stored in Key Vault. The `orderstore`, `shopstate`, `workflowstate`, and `sendmail` Dapr components reference them via `secretRef` + `keyVaultUrl`. The catalog's connection string is delivered to the container the same way
+- ⚠️ **Postgres** still authenticates with a password (held in Key Vault). Switching to Microsoft Entra auth requires a post-deploy hook that registers the MI as a Postgres role plus a token-fetching `PasswordProvider` in the catalog. That's the obvious next hardening step.
+- ⚠️ **Redis** also authenticates with an access key. Entra auth on Azure Cache for Redis is supported on the Premium SKU and via Redis Enterprise; switching would require an SKU bump.
+- ⚠️ All managed services have **public networking**. Adding private endpoints + private DNS zones is a separate hardening pass.
+- ⚠️ One **shared user-assigned MI** is used for all three custom apps. Splitting per-app gives tighter least-privilege at the cost of more role assignments — tracked as a follow-up.
+- ⚠️ The frontend ingress is **unauthenticated** by design (it's a demo storefront). A real deployment would put EasyAuth or similar in front.
 
 ## Notable tooling choices
 
@@ -75,6 +128,7 @@ The `aks-deploy.ps1` and `azure-container-apps-deploy.ps1` scripts and the manif
 
 ## Troubleshooting
 
-- **`Failed to load components` from a sidecar.** Make sure `dapr init` has been run on this machine. Aspire shells out to the Dapr CLI; if `dapr` isn't on PATH the sidecar resource will fail to start.
-- **mDNS errors when `frontend` calls `catalog`.** [Known Dapr issue](https://github.com/dapr/dapr/issues/3256) when certain VPN or Cisco networking software is running. Workaround is to stop the offending software temporarily.
-- **After upgrading Dapr on AKS**, restart the deployments. The `aks-deploy.ps1` script has an example.
+- **`Failed to load components` from a sidecar (local).** Make sure `dapr init` has been run on this machine. Aspire shells out to the Dapr CLI; if `dapr` isn't on PATH the sidecar resource will fail to start.
+- **mDNS errors when `frontend` calls `catalog` (local).** [Known Dapr issue](https://github.com/dapr/dapr/issues/3256) when certain VPN or Cisco networking software is running. Workaround is to stop the offending software temporarily.
+- **`azd up` fails on Postgres deletion.** Postgres flexible server names go into a soft-deleted state for a few minutes after `azd down`. Either wait, or pick a new environment name on the next deploy.
+- **Aspire dashboard says "browser token required".** Pull the token from the dashboard's container logs: `az containerapp logs show -n aspire-dashboard -g rg-<env> --tail 30`. The token is in the line that mentions logging in.

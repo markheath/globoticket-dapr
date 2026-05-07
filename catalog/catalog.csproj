@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>GloboTicket.Catalog</RootNamespace>
     <Version>0.9.0.0</Version>
+    <UserSecretsId>9bfbca78-972e-4ad9-b38b-9081e1ac1cdb</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
