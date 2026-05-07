@@ -41,8 +41,8 @@ If you need a dummy credit card number on the checkout page, use `42424242424242
 ## Architecture overview
 
 - **frontend** — ASP.NET Core MVC site. Lets visitors browse the catalog and place orders. Talks to `catalog` via Dapr service invocation, stores the shopping basket in a Dapr state store (Redis), and submits orders via Dapr pub/sub.
-- **catalog** — Web API that returns the list of events from a PostgreSQL database (via EF Core + Npgsql). The connection string is injected by Aspire. A Dapr cron binding fires every 5 minutes to rotate which event is on special offer. The Dapr secret store is also exercised on every read for the demo (logs a connection string read from `secrets.json`).
-- **ordering** — Web API that subscribes to the `orders` topic. Persists the order to its own PostgreSQL database via the **Dapr state store with the transactional outbox pattern enabled** — the state write atomically publishes an `order-confirmed` event on the same transaction. A second handler subscribes to `order-confirmed` and sends the confirmation email via the Dapr SMTP output binding, guaranteeing the email is only sent once the order has been durably persisted.
+- **catalog** — Web API that returns the list of events from a PostgreSQL database (via EF Core + Npgsql). The connection string is injected by Aspire. A Dapr cron binding fires every 5 minutes to rotate which event is on special offer.
+- **ordering** — Web API that subscribes to the `orders` topic. Persists the order to its own PostgreSQL database via the **Dapr state store with the transactional outbox pattern enabled** — the state write atomically publishes an `order-confirmed` event on the same transaction. A second handler subscribes to `order-confirmed` and sends the confirmation email via the Dapr SMTP output binding, guaranteeing the email is only sent once the order has been durably persisted. The SMTP binding's credentials are pulled from the Dapr **secret store** via `secretKeyRef`, so the component YAML never contains the username or password directly.
 
 The basket stays on Redis on purpose — it is ephemeral session state and Redis is the right backend for that. PostgreSQL is used for the things that need to outlive a process restart (catalog data, order history).
 
@@ -55,7 +55,7 @@ Dapr components live in `dapr/components/`:
 | `orderstore.yaml`       | `orderstore`   | PostgreSQL state store for orders, with transactional outbox       |
 | `email.yml`             | `sendmail`     | SMTP output binding pointed at MailPit                             |
 | `cron.yml`              | `scheduled`    | Cron input binding that calls the catalog                          |
-| `localSecretStore.yml`  | `secretstore`  | Local file secret store (reads `secrets.json`)                     |
+| `localSecretStore.yml`  | `secretstore`  | Local file secret store; supplies SMTP credentials to `sendmail`   |
 
 The Aspire AppHost wires the same components folder into every Dapr sidecar via `DaprSidecarOptions.ResourcesPaths`. Component-level `scopes:` restrict the order store to the `ordering` service only.
 
