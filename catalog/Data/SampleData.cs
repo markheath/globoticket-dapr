@@ -33,7 +33,7 @@ internal static class SampleData
         [AishaPatelId] = 100,
         [MayaOkaforId] = 100,
         [SunlightAvenueId] = 100,
-        [LighthouseId] = 100,
+        [LighthouseId] = 7,
         [LettersId] = 100,
     };
 

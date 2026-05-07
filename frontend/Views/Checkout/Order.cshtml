@@ -1,0 +1,153 @@
+@{
+    var orderId = (Guid)ViewData["OrderId"]!;
+}
+
+<h2 class="mb-2">Order @orderId.ToString().Substring(0, 8)</h2>
+<p class="text-muted mb-4">
+    Live workflow progress. This page polls the ordering service every 750ms
+    and stops when the workflow reaches a terminal state.
+</p>
+
+<div class="workflow-steps">
+    <div class="workflow-step pending" data-step-index="0">
+        <span class="step-icon">1</span>
+        <div>
+            <strong>Reserve tickets</strong>
+            <div class="text-muted small">Atomic decrement against the catalog database for every line.</div>
+        </div>
+    </div>
+    <div class="workflow-step pending" data-step-index="1">
+        <span class="step-icon">2</span>
+        <div>
+            <strong>Authorize payment</strong>
+            <div class="text-muted small">Mock charge. Declined when the card number ends in 0000.</div>
+        </div>
+    </div>
+    <div class="workflow-step pending" data-step-index="2">
+        <span class="step-icon">3</span>
+        <div>
+            <strong>Persist order</strong>
+            <div class="text-muted small">Save the order to the Dapr state store.</div>
+        </div>
+    </div>
+    <div class="workflow-step pending" data-step-index="3">
+        <span class="step-icon">4</span>
+        <div>
+            <strong>Send confirmation email</strong>
+            <div class="text-muted small">Email sent via the Dapr SMTP output binding to MailPit.</div>
+        </div>
+    </div>
+</div>
+
+<div id="compensation-banner" class="workflow-compensation" style="display:none;">
+    Rolling back: releasing reservations made earlier in the workflow.
+</div>
+
+<div id="result-banner" class="workflow-result" style="display:none;"></div>
+
+<div class="mt-4">
+    <a class="btn btn-primary" asp-controller="EventCatalog" asp-action="Index">BACK TO EVENTS</a>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const STATUS_URL = '@Url.Action("OrderStatus", "Checkout", new { orderId })';
+            const STATUS_TO_STEP = {
+                'Reserving tickets': 0,
+                'Authorizing payment': 1,
+                'Persisting order': 2,
+                'Sending confirmation email': 3,
+            };
+            const TERMINAL = new Set(['Completed', 'Failed', 'Terminated', 'Canceled']);
+            const stepEls = document.querySelectorAll('.workflow-step');
+            const compensationBanner = document.getElementById('compensation-banner');
+            const resultBanner = document.getElementById('result-banner');
+
+            function setStepClass(idx, cls) {
+                const el = stepEls[idx];
+                el.classList.remove('pending', 'current', 'done', 'failed');
+                el.classList.add(cls);
+                const icon = el.querySelector('.step-icon');
+                if (cls === 'done') icon.textContent = '✓';
+                else if (cls === 'failed') icon.textContent = '✗';
+                else icon.textContent = String(idx + 1);
+            }
+
+            function failedStepFromReason(reason) {
+                if (!reason) return -1;
+                if (reason.startsWith('Sold out')) return 0;
+                if (reason === 'Card declined') return 1;
+                return -1;
+            }
+
+            function render(state) {
+                const isTerminal = TERMINAL.has(state.runtimeStatus);
+                const output = state.output || null;
+                const success = isTerminal && output && output.success;
+                const reason = output ? output.reason : null;
+
+                let currentIdx = STATUS_TO_STEP[state.customStatus];
+                const isCompensating = state.customStatus === 'Releasing reservations';
+
+                for (let i = 0; i < 4; i++) {
+                    if (isTerminal) {
+                        if (success) {
+                            setStepClass(i, 'done');
+                        } else {
+                            const f = failedStepFromReason(reason);
+                            if (f === -1) setStepClass(i, 'pending');
+                            else if (i < f) setStepClass(i, 'done');
+                            else if (i === f) setStepClass(i, 'failed');
+                            else setStepClass(i, 'pending');
+                        }
+                    } else if (currentIdx === undefined) {
+                        setStepClass(i, 'pending');
+                    } else if (i < currentIdx) {
+                        setStepClass(i, 'done');
+                    } else if (i === currentIdx) {
+                        setStepClass(i, 'current');
+                    } else {
+                        setStepClass(i, 'pending');
+                    }
+                }
+
+                compensationBanner.style.display = (isCompensating && !isTerminal) ? 'block' : 'none';
+
+                if (isTerminal) {
+                    resultBanner.style.display = 'block';
+                    if (success) {
+                        resultBanner.className = 'workflow-result success';
+                        resultBanner.textContent = 'Order complete. Your tickets are on their way and a confirmation email has been sent.';
+                    } else {
+                        resultBanner.className = 'workflow-result failure';
+                        resultBanner.textContent = 'Order failed: ' + (reason || state.runtimeStatus);
+                    }
+                }
+            }
+
+            async function poll() {
+                try {
+                    const res = await fetch(STATUS_URL, { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
+                    if (res.status === 404) {
+                        // Workflow may not be registered yet — pubsub still in flight. Retry.
+                        setTimeout(poll, 750);
+                        return;
+                    }
+                    if (!res.ok) {
+                        setTimeout(poll, 1500);
+                        return;
+                    }
+                    const state = await res.json();
+                    render(state);
+                    if (TERMINAL.has(state.runtimeStatus)) return;
+                    setTimeout(poll, 750);
+                } catch (e) {
+                    setTimeout(poll, 1500);
+                }
+            }
+
+            poll();
+        })();
+    </script>
+}

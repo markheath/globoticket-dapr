@@ -10,4 +10,5 @@ public class Event
     public string Description { get; set; } = String.Empty;
     public string ImageUrl { get; set; } = String.Empty;
     public bool IsOnSpecialOffer { get; set; }
+    public int TicketsAvailable { get; set; }
 }

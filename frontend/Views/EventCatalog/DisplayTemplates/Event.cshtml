@@ -1,4 +1,4 @@
-﻿@model GloboTicket.Frontend.Models.Api.Event
+@model GloboTicket.Frontend.Models.Api.Event
 <tr>
     <td>
         <img class="artistPic" src="@Model!.ImageUrl" alt="Artist pic" />
@@ -10,6 +10,14 @@
         @Model.Name
         @if(Model.IsOnSpecialOffer) {
             <span class="specialOffer">SPECIAL&nbsp;OFFER</span>
+        }
+        @if (Model.TicketsAvailable == 0)
+        {
+            <span class="soldOut">SOLD&nbsp;OUT</span>
+        }
+        else if (Model.TicketsAvailable <= 10)
+        {
+            <span class="lowStock">ONLY&nbsp;@Model.TicketsAvailable&nbsp;LEFT</span>
         }
     </td>
     <td>

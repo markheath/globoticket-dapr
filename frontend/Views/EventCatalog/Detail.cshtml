@@ -27,6 +27,14 @@
                 {
                     <span class="specialOffer">SPECIAL&nbsp;OFFER</span>
                 }
+                @if (Model.TicketsAvailable == 0)
+                {
+                    <span class="soldOut">SOLD&nbsp;OUT</span>
+                }
+                else if (Model.TicketsAvailable <= 10)
+                {
+                    <span class="lowStock">ONLY&nbsp;@Model.TicketsAvailable&nbsp;LEFT</span>
+                }
             </span>
         </div>
     </div>

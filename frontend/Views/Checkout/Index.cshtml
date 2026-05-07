@@ -35,6 +35,16 @@
             </div>
         </div>
 
+        <div class="mb-3">
+            <label for="cardPreset" class="form-label">Card preset</label>
+            <select id="cardPreset" class="form-select">
+                <option value="4242424242424242" selected>Visa 4242 4242 4242 4242 (will succeed)</option>
+                <option value="5454545454540000">Mastercard 5454 5454 5454 0000 (will be declined)</option>
+                <option value="">Enter manually</option>
+            </select>
+            <div class="form-text">Any card whose number ends in 0000 is rejected by the mock charge step.</div>
+        </div>
+
         <div class="row mb-4">
             <div class="col-md-8">
                 <label asp-for="CreditCard" class="form-label">Credit Card</label>
@@ -53,3 +63,15 @@
         </div>
     </form>
 </div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const preset = document.getElementById('cardPreset');
+            const input = document.getElementById('CreditCard');
+            preset.addEventListener('change', () => {
+                input.value = preset.value;
+            });
+        })();
+    </script>
+}

@@ -13,6 +13,10 @@ builder.Services.AddSingleton<IEventCatalogService>(sp =>
     new EventCatalogService(DaprClient.CreateInvokeHttpClient("catalog")));
 builder.Services.AddScoped<IShoppingBasketService, DaprClientStateStoreShoppingBasket>();
 builder.Services.AddScoped<IOrderSubmissionService, DaprOrderSubmissionService>();
+// HttpClient routed through the local Dapr sidecar to the ordering app.
+// Used by the order-status pass-through endpoint that the live status
+// page polls.
+builder.Services.AddSingleton(_ => DaprClient.CreateInvokeHttpClient(appId: "ordering"));
 
 builder.Services.AddSingleton<Settings>();
 

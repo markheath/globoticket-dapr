@@ -52,9 +52,10 @@ public class OrderController : ControllerBase
         }
         return Ok(new
         {
-            state.RuntimeStatus,
+            RuntimeStatus = state.RuntimeStatus.ToString(),
             state.CreatedAt,
             state.LastUpdatedAt,
+            CustomStatus = state.ReadCustomStatusAs<string>(),
             Output = state.ReadOutputAs<CheckoutResult>(),
         });
     }

@@ -148,6 +148,111 @@ footer {
   padding: 3px;
 }
 
+.lowStock {
+  background-color: #f5a623;
+  border-radius: 4px;
+  color: white;
+  font-weight: bold;
+  padding: 3px 6px;
+  font-size: 0.85em;
+  margin-left: 6px;
+  white-space: nowrap;
+}
+
+.soldOut {
+  background-color: #d0021b;
+  border-radius: 4px;
+  color: white;
+  font-weight: bold;
+  padding: 3px 6px;
+  font-size: 0.85em;
+  margin-left: 6px;
+  white-space: nowrap;
+}
+
 .checkout-form {
   max-width: 600px;
+}
+
+.workflow-steps {
+  max-width: 600px;
+  margin: 30px 0;
+}
+
+.workflow-step {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  background-color: #f7f7f7;
+  transition: background-color 0.2s ease;
+}
+
+.workflow-step .step-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1em;
+  margin-right: 16px;
+  background-color: #ddd;
+  color: #666;
+  flex-shrink: 0;
+}
+
+.workflow-step.current {
+  background-color: #e6f4f4;
+}
+
+.workflow-step.current .step-icon {
+  background-color: #51b5b1;
+  color: white;
+  animation: workflow-pulse 1.2s ease-in-out infinite;
+}
+
+.workflow-step.done .step-icon {
+  background-color: #28a745;
+  color: white;
+}
+
+.workflow-step.failed .step-icon {
+  background-color: #d0021b;
+  color: white;
+}
+
+@keyframes workflow-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+}
+
+.workflow-result {
+  padding: 16px 20px;
+  border-radius: 8px;
+  font-size: 1.1em;
+  margin-top: 12px;
+}
+
+.workflow-result.success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.workflow-result.failure {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.workflow-compensation {
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeeba;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-top: 12px;
+  font-size: 0.95em;
 }
