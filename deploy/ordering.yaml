@@ -17,12 +17,12 @@ spec:
       annotations:
         dapr.io/enabled: "true"
         dapr.io/app-id: "ordering"
-        dapr.io/app-port: "80"
+        dapr.io/app-port: "8080"
         dapr.io/config: "appconfig"
     spec:
       containers:
       - name: ordering
         image: markheath/globoticket-dapr-ordering:latest
         ports:
-        - containerPort: 80
+        - containerPort: 8080
         imagePullPolicy: Always

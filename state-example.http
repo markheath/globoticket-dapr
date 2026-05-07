@@ -1,8 +1,12 @@
-POST http://localhost:3500/v1.0/state/statestore
+# Hits the Dapr state store directly via the frontend sidecar's HTTP port.
+# Aspire allocates that dynamically — find it in the Aspire dashboard next
+# to the "frontend-dapr" resource, then substitute below.
+@frontendDaprPort = 0
+
+POST http://localhost:{{frontendDaprPort}}/v1.0/state/shopstate
 content-type: application/json
 
 [{"key":"color","value":"red"}]
 
 ###
-
-GET  http://localhost:3500/v1.0/state/statestore/color
+GET http://localhost:{{frontendDaprPort}}/v1.0/state/shopstate/color

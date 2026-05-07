@@ -17,14 +17,14 @@ spec:
       annotations:
         dapr.io/enabled: "true"
         dapr.io/app-id: "catalog"
-        dapr.io/app-port: "80"
+        dapr.io/app-port: "8080"
         dapr.io/config: "appconfig"
     spec:
       containers:
       - name: catalog
         image: markheath/globoticket-dapr-catalog:latest
         ports:
-        - containerPort: 80
+        - containerPort: 8080
         imagePullPolicy: Always
         env:
         - name: SECRET_STORE_NAME

@@ -10,14 +10,14 @@ public class DaprClientStateStoreShoppingBasket : IShoppingBasketService
     private readonly DaprClient daprClient;
     private readonly IEventCatalogService eventCatalogService;
     private readonly Settings settings;
-    private readonly ILogger<DaprStateStoreShoppingBasket> logger;
+    private readonly ILogger<DaprClientStateStoreShoppingBasket> logger;
     private const string stateStoreName = "shopstate";
 
     public DaprClientStateStoreShoppingBasket(
         DaprClient daprClient,
         IEventCatalogService eventCatalogService,
         Settings settings,
-        ILogger<DaprStateStoreShoppingBasket> logger)
+        ILogger<DaprClientStateStoreShoppingBasket> logger)
     {
         this.daprClient = daprClient;
         this.eventCatalogService = eventCatalogService;

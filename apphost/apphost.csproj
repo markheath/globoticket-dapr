@@ -1,0 +1,22 @@
+<Project Sdk="Aspire.AppHost.Sdk/13.2.4">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UserSecretsId>1f4a2b18-7c52-4d61-8a9d-3c0e9c4f1c2a</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Aspire.Hosting.Dapr" Version="13.0.0" />
+    <PackageReference Include="CommunityToolkit.Aspire.Hosting.MailPit" Version="13.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\catalog\catalog.csproj" />
+    <ProjectReference Include="..\frontend\frontend.csproj" />
+    <ProjectReference Include="..\ordering\ordering.csproj" />
+  </ItemGroup>
+
+</Project>

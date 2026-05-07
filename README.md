@@ -1,50 +1,72 @@
 # Dapr Fundamentals GloboTicket Demo Application
 
-This application is intended to demonstrate the basics of using Dapr to build a microservices application. It is the demo project for the [Pluralsight Dapr 1 Fundamentals](https://pluralsight.pxf.io/c/1192349/424552/7490?u=www%2Epluralsight%2Ecom%2Fcourses%2Fdapr-1-fundamentals) course, by Mark Heath.
+This application demonstrates the basics of using [Dapr](https://dapr.io/) to build a microservices application. It is the demo project for the [Pluralsight Dapr 1 Fundamentals](https://pluralsight.pxf.io/c/1192349/424552/7490?u=www%2Epluralsight%2Ecom%2Fcourses%2Fdapr-1-fundamentals) course by Mark Heath.
 
-This version of the code is using Dapr 1.13
+This version targets **.NET 10**, **Dapr 1.17**, and uses **.NET Aspire** to orchestrate everything locally with a single `dotnet run`.
 
-## Running the app locally
+> **Following the Pluralsight course?** The course was recorded against Dapr 1.13 / .NET 8, with PowerShell start scripts and Docker Compose. That version is preserved on the [`dapr-1-13`](https://github.com/markheath/globoticket-dapr/tree/dapr-1-13) branch. Switch to it if you want the code to match the videos exactly.
 
-The recommended way for running locally is to use self-hosted mode (option 1). I have also managed to get it running in Docker Compose, although that option has not been tested so much.
+## Prerequisites
 
-### Option 1 - Running self-hosted from the command line
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
+- [Dapr CLI](https://docs.dapr.io/getting-started/install-dapr-cli/), with `dapr init` already run (this provisions the local Redis used for state and pub/sub)
+- A container runtime (Docker Desktop, Podman, or Rancher Desktop)
 
-**Prerequisites:** You need to have the [Dapr CLI installed](https://docs.dapr.io/getting-started/install-dapr-cli/), as well as Docker installed (e.g. Docker Desktop for Windows), and to have set up Dapr in self-hosted mode with `dapr init`
+That's it. There is no separate Aspire workload to install — `Aspire.AppHost.Sdk` is restored automatically.
 
-And in order to use the email sending feature, you'll want a local container running maildev, which you can start using: `docker run -d -p 1080:1080 -p 1025:1025 maildev/maildev`. If you need a dummy credit card number to place an order you can use `4242424242424242` or `5555555555554444`
+## Run it
 
-Open three terminal windows. In the `frontend` folder run `start-self-hosted.ps1`. Do the same in the `catalog` and `ordering` folders. The ports used are specified in the PowerShell start up scripts. The frontend app will be available at `http://localhost:5266/`. The catalog service will be at `http://localhost:5016/swagger/index.html`, and the ordering service at `http://localhost:5293/swagger/index.html`
+```powershell
+dotnet run --project apphost
+```
 
-You can view Zipkin traces at http://localhost:9411/zipkin/?
-You can see the emails sent by the ordering service using maildev on: `http://localhost:1080/#/`
+Or open `globoticket-dapr.sln` in Visual Studio (the `apphost` project is set as the startup project) and press F5.
 
-### Option 2 - Running with Docker Compose
+The Aspire dashboard opens automatically and is the canonical place to find every service URL. The app ports below are pinned via each project's `launchSettings.json` so the demo URLs are stable:
 
-In same folder as the `docker-compose.yml` file, run `docker-compose build` then `docker-compose up`. The frontend service will be at `https://localhost:5001`.
+| Service     | URL                                |
+|-------------|------------------------------------|
+| `frontend`  | http://localhost:5266              |
+| `catalog`   | http://localhost:5016/scalar/v1    |
+| `ordering`  | http://localhost:5293/scalar/v1    |
+| `mailpit`   | http://localhost:8025              |
 
-Note: The Docker Compose version has its own components folder, as the relative path of the local secrets is different, and redis is not on localhost.
-You will be able to access Zipkin traces on: `http://localhost:9412/zipkin/`
+Dapr sidecar ports are *not* pinned — Aspire allocates them dynamically, and the .NET apps reach Dapr via the `DAPR_HTTP_PORT` env var the toolkit injects. If you want to call a Dapr API from outside (e.g. the example `.http` files), look up the sidecar's port next to `<app>-dapr` in the Aspire dashboard.
 
-You can see the emails sent by the ordering service using maildev on: `http://localhost:1080/#/`
+Distributed traces, structured logs, and resource metrics are all in the dashboard.
 
-### Option 3 - Running with Docker Compose in Visual Studio 2022
+If you need a dummy credit card number on the checkout page, use `4242424242424242` or `5555555555554444`.
 
-Set the startup project to Docker Compose. If you've used option 1, make sure the other Docker Compose containers are removed or there will be a name conflict. The frontend service will be at `https://localhost:5001`.  The catalog service will be at `http://localhost:5003/swagger/index.html`, and the ordering service at `http://localhost:5004/swagger/index.html`.
-You will be able to access Zipkin traces on: `http://localhost:9412/zipkin/`
+## Architecture overview
 
-## Architecture Overview
+- **frontend** — ASP.NET Core MVC site. Lets visitors browse the catalog and place orders. Talks to `catalog` via Dapr service invocation, stores the shopping basket in a Dapr state store (Redis), and submits orders via Dapr pub/sub.
+- **catalog** — Web API that returns the list of events. The list is hard-coded in-memory for simplicity. A Dapr cron binding fires every 5 minutes to rotate which event is on special offer.
+- **ordering** — Web API that subscribes to the `orders` topic. When an order arrives it sends a confirmation email via the Dapr SMTP output binding (which targets MailPit locally).
 
-- The **frontend** microservice is a simple ASP.NET Core 6 website. It allows visitors to browse the catalog of events, and place an order for tickets
-- The **catalog** microservice provides the list of events that tickets can be purchased for. To keep this demo as simple as possible, the catalog microservice returns a hard-coded in-memory list. Created with `dotnet new webapi -o catalog --no-https` (no https because we're going to rely on dapr for securing communication between microservices). A dapr cron job calls a scheduled endpoint on this.
-- The **ordering** microservice takes new orders. It receives the order via pub-sub messaging. It sends an email to thank the user for purchasing. A dapr output
+Dapr components live in `dapr/components/`:
 
-## Deploying to Kubernetes (AKS) on Azure
+| File                    | Component name | Purpose                                       |
+|-------------------------|----------------|-----------------------------------------------|
+| `pubsub.yaml`           | `pubsub`       | Redis pub/sub used for order submission       |
+| `stateStore.yml`        | `shopstate`    | Redis state store for the shopping basket     |
+| `email.yml`             | `sendmail`     | SMTP output binding pointed at MailPit        |
+| `cron.yml`              | `scheduled`    | Cron input binding that calls the catalog     |
+| `localSecretStore.yml`  | `secretstore`  | Local file secret store (reads `secrets.json`) |
 
-The `aks-deploy.ps1` PowerShell script shows the steps needed to deploy this to Azure. Don't run this directly. You'll need the Azure CLI installed, and you'll also need to pick unique resource names that are available. The script includes example commands you can use to check it's all working as expected.
+The Aspire AppHost wires the same components folder into every Dapr sidecar via `DaprSidecarOptions.ResourcesPaths`.
 
-## Troubleshooting notes
+## Deploying
 
-- the `maildev` docker image switched its default ports from 80 & 25 to 1080 and 1025, so make sure you're using the correct email YAML component definition from this repo if you're having troubles with those
-- there is a [known issue](https://github.com/dapr/dapr/issues/3256) when running locally with the mDNS resolution in Dapr where if you are running certain VPNs or CISCO networking apps it can cause it to fail. The workaround is usually to temporarily stop the offending software. In the GloboTicket app, this error would cause the homepage to fail to load, unable to communicate with the catalog service.
-- When running on AKS, after you've upgraded Dapr, it's a good idea to restart the deployments. The AKS demo script has an example.
+The `aks-deploy.ps1` and `azure-container-apps-deploy.ps1` scripts contain the steps to deploy this to Azure. They are reference scripts — read them before running, you'll need to pick unique resource names. Kubernetes manifests live in `deploy/`, and the ACA-flavoured Dapr components live in `dapr/containerapps-components/`.
+
+## Notable tooling choices
+
+- **`Aspire.AppHost.Sdk` 13.x** with [`CommunityToolkit.Aspire.Hosting.Dapr`](https://github.com/CommunityToolkit/Aspire/tree/main/src/CommunityToolkit.Aspire.Hosting.Dapr) — the Microsoft `Aspire.Hosting.Dapr` package was handed to the Community Toolkit.
+- **[MailPit](https://mailpit.axllent.org/)** instead of maildev for local SMTP capture — actively maintained, has a first-party Aspire integration.
+- **`Microsoft.AspNetCore.OpenApi` + [Scalar](https://scalar.com/)** instead of Swashbuckle — Swashbuckle was removed from the Microsoft ASP.NET Core Web API template in .NET 9.
+
+## Troubleshooting
+
+- **`Failed to load components` from a sidecar.** Make sure `dapr init` has been run on this machine. Aspire shells out to the Dapr CLI; if `dapr` isn't on PATH the sidecar resource will fail to start.
+- **mDNS errors when `frontend` calls `catalog`.** [Known Dapr issue](https://github.com/dapr/dapr/issues/3256) when certain VPN or Cisco networking software is running. Workaround is to stop the offending software temporarily.
+- **After upgrading Dapr on AKS**, restart the deployments. The `aks-deploy.ps1` script has an example.
