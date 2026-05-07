@@ -5,12 +5,22 @@ internal static class SampleData
     private static readonly Guid JohnEgbertId = Guid.Parse("CFB88E29-4744-48C0-94FA-B25B92DEA317");
     private static readonly Guid NickSailorId = Guid.Parse("CFB88E29-4744-48C0-94FA-B25B92DEA318");
     private static readonly Guid MichaelJohnsonId = Guid.Parse("CFB88E29-4744-48C0-94FA-B25B92DEA319");
+    private static readonly Guid AishaPatelId = Guid.Parse("CFB88E29-4744-48C0-94FA-B25B92DEA320");
+    private static readonly Guid MayaOkaforId = Guid.Parse("CFB88E29-4744-48C0-94FA-B25B92DEA321");
+    private static readonly Guid SunlightAvenueId = Guid.Parse("CFB88E29-4744-48C0-94FA-B25B92DEA322");
+    private static readonly Guid LighthouseId = Guid.Parse("CFB88E29-4744-48C0-94FA-B25B92DEA323");
+    private static readonly Guid LettersId = Guid.Parse("CFB88E29-4744-48C0-94FA-B25B92DEA324");
 
     private static readonly Dictionary<Guid, int> DefaultPrices = new()
     {
         [JohnEgbertId] = 65,
         [NickSailorId] = 135,
         [MichaelJohnsonId] = 85,
+        [AishaPatelId] = 70,
+        [MayaOkaforId] = 80,
+        [SunlightAvenueId] = 120,
+        [LighthouseId] = 55,
+        [LettersId] = 60,
     };
 
     // Three inventory tiers so the workflow's reservation/compensation paths
@@ -20,6 +30,11 @@ internal static class SampleData
         [MichaelJohnsonId] = 100,
         [JohnEgbertId] = 3,
         [NickSailorId] = 0,
+        [AishaPatelId] = 100,
+        [MayaOkaforId] = 100,
+        [SunlightAvenueId] = 100,
+        [LighthouseId] = 100,
+        [LettersId] = 100,
     };
 
     public static IReadOnlyList<Event> Events =>
@@ -56,6 +71,61 @@ internal static class SampleData
             Description = "The critics are over the moon and so will you after you've watched this sing and dance extravaganza written by Nick Sailor, the man from 'My dad and sister'.",
             ImageUrl = "/img/musical.jpg",
             TicketsAvailable = DefaultStock[NickSailorId],
+        },
+        new Event
+        {
+            EventId = AishaPatelId,
+            Name = "An Evening with Aisha Patel",
+            Price = DefaultPrices[AishaPatelId],
+            Artist = "Aisha Patel",
+            Date = DateTime.UtcNow.AddMonths(11),
+            Description = "Aisha Patel returns to the city stage for one night only, blending classical violin with the rhythms of her South-Asian heritage. A warm, intimate evening that has sold out venues from London to Singapore.",
+            ImageUrl = "/img/aisha.jpg",
+            TicketsAvailable = DefaultStock[AishaPatelId],
+        },
+        new Event
+        {
+            EventId = MayaOkaforId,
+            Name = "Midnight Sessions with Maya Okafor",
+            Price = DefaultPrices[MayaOkaforId],
+            Artist = "Maya Okafor",
+            Date = DateTime.UtcNow.AddMonths(13),
+            Description = "Three-time Grammy nominee Maya Okafor brings her signature blend of jazz, soul and contemporary R&B to the headline stage. Expect new material from her upcoming album alongside the songs you already love.",
+            ImageUrl = "/img/maya.jpg",
+            TicketsAvailable = DefaultStock[MayaOkaforId],
+        },
+        new Event
+        {
+            EventId = SunlightAvenueId,
+            Name = "Sunlight Avenue",
+            Price = DefaultPrices[SunlightAvenueId],
+            Artist = "Priya Raman",
+            Date = DateTime.UtcNow.AddMonths(15),
+            Description = "A vibrant new musical from composer Priya Raman following four neighbours over one transformative summer. Critics have called it the freshest score Broadway has heard in years.",
+            ImageUrl = "/img/sunlight.jpg",
+            TicketsAvailable = DefaultStock[SunlightAvenueId],
+        },
+        new Event
+        {
+            EventId = LighthouseId,
+            Name = "The Lighthouse Keeper's Daughter",
+            Price = DefaultPrices[LighthouseId],
+            Artist = "Helena Marsh",
+            Date = DateTime.UtcNow.AddMonths(18),
+            Description = "Helena Marsh's quietly devastating two-hander has won this year's Olivier Award for Best New Play. A lighthouse, a long-kept secret, and a daughter returning home after twenty years away.",
+            ImageUrl = "/img/lighthouse.jpg",
+            TicketsAvailable = DefaultStock[LighthouseId],
+        },
+        new Event
+        {
+            EventId = LettersId,
+            Name = "Letters from the Border",
+            Price = DefaultPrices[LettersId],
+            Artist = "Kenji Tanaka",
+            Date = DateTime.UtcNow.AddMonths(20),
+            Description = "Kenji Tanaka's celebrated drama, translated into eleven languages, makes its long-awaited debut on the main stage. A correspondence between two strangers across a closed border, and what happens when the border finally opens.",
+            ImageUrl = "/img/letters.jpg",
+            TicketsAvailable = DefaultStock[LettersId],
         },
     ];
 
