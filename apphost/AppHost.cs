@@ -8,6 +8,16 @@ var builder = DistributedApplication.CreateBuilder(args);
 // without per-run wiring.
 var mailpit = builder.AddMailPit("mailpit", httpPort: 8025, smtpPort: 1025);
 
+// Postgres backs the catalog (EF Core via Aspire-injected connection string)
+// and the ordering Dapr state store (component YAML references localhost:5432
+// directly). Pinning the password keeps the orderstore.yaml component static —
+// same trade-off accepted for Redis and MailPit.
+var pgPassword = builder.AddParameter("pg-password", "postgres", secret: true);
+var postgres = builder.AddPostgres("pg", password: pgPassword, port: 5432)
+                      .WithDataVolume();
+var catalogDb = postgres.AddDatabase("catalogdb");
+var orderingDb = postgres.AddDatabase("orderingdb");
+
 // All sidecars share the same Dapr components directory at /dapr/components.
 var componentsPath = Path.GetFullPath(
     Path.Combine(builder.AppHostDirectory, "..", "dapr", "components"));
@@ -19,10 +29,13 @@ DaprSidecarOptions Sidecar(string appId) => new()
 };
 
 var catalog = builder.AddProject<Projects.catalog>("catalog")
+    .WithReference(catalogDb)
+    .WaitFor(catalogDb)
     .WithDaprSidecar(Sidecar("catalog"));
 
 var ordering = builder.AddProject<Projects.ordering>("ordering")
     .WaitFor(mailpit)
+    .WaitFor(orderingDb)
     .WithDaprSidecar(Sidecar("ordering"));
 
 builder.AddProject<Projects.frontend>("frontend")

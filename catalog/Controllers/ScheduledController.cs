@@ -18,9 +18,9 @@ public class ScheduledController : ControllerBase
     }
     
     [HttpPost("", Name = "Scheduled")]
-    public void OnSchedule()
+    public async Task OnSchedule()
     {
-        var specialOfferEvent = eventRepository.UpdateSpecialOffer();
+        var specialOfferEvent = await eventRepository.UpdateSpecialOffer();
         logger.LogInformation(
             "Scheduled endpoint called: {EventName} is now on sale for {Price}",
             specialOfferEvent.Name, specialOfferEvent.Price);

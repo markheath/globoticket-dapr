@@ -7,6 +7,7 @@ builder.AddServiceDefaults();
 builder.Services.AddControllers().AddDapr();
 builder.Services.AddOpenApi();
 builder.Services.AddTransient<EmailSender>();
+builder.Services.AddTransient<OrderRepository>();
 
 var app = builder.Build();
 

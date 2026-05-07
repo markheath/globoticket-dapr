@@ -2,7 +2,7 @@ namespace GloboTicket.Catalog.Repositories;
 
 public interface IEventRepository
 {
-  Task<IEnumerable<Event>> GetEvents();
-  Task<Event> GetEventById(Guid eventId);
-  Event UpdateSpecialOffer();
+    Task<IEnumerable<Event>> GetEvents();
+    Task<Event> GetEventById(Guid eventId);
+    Task<Event> UpdateSpecialOffer();
 }

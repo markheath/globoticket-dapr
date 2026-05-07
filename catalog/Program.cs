@@ -1,10 +1,13 @@
+using GloboTicket.Catalog.Data;
 using GloboTicket.Catalog.Repositories;
+using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
-builder.Services.AddSingleton<IEventRepository, EventRepository>();
+builder.AddNpgsqlDbContext<CatalogDbContext>("catalogdb");
+builder.Services.AddScoped<IEventRepository, EventRepository>();
 builder.Services.AddControllers().AddDapr();
 builder.Services.AddOpenApi();
 
@@ -19,4 +22,18 @@ if (app.Environment.IsDevelopment())
 app.MapDefaultEndpoints();
 app.MapControllers();
 
+await SeedAsync(app);
+
 app.Run();
+
+static async Task SeedAsync(WebApplication app)
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<CatalogDbContext>();
+    await db.Database.EnsureCreatedAsync();
+    if (!await db.Events.AnyAsync())
+    {
+        db.Events.AddRange(SampleData.Events);
+        await db.SaveChangesAsync();
+    }
+}

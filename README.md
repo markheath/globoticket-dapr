@@ -30,6 +30,7 @@ The Aspire dashboard opens automatically and is the canonical place to find ever
 | `catalog`   | http://localhost:5016/scalar/v1    |
 | `ordering`  | http://localhost:5293/scalar/v1    |
 | `mailpit`   | http://localhost:8025              |
+| `pg`        | `postgres://postgres:postgres@localhost:5432` (catalogdb, orderingdb) |
 
 Dapr sidecar ports are *not* pinned — Aspire allocates them dynamically, and the .NET apps reach Dapr via the `DAPR_HTTP_PORT` env var the toolkit injects. If you want to call a Dapr API from outside (e.g. the example `.http` files), look up the sidecar's port next to `<app>-dapr` in the Aspire dashboard.
 
@@ -40,28 +41,32 @@ If you need a dummy credit card number on the checkout page, use `42424242424242
 ## Architecture overview
 
 - **frontend** — ASP.NET Core MVC site. Lets visitors browse the catalog and place orders. Talks to `catalog` via Dapr service invocation, stores the shopping basket in a Dapr state store (Redis), and submits orders via Dapr pub/sub.
-- **catalog** — Web API that returns the list of events. The list is hard-coded in-memory for simplicity. A Dapr cron binding fires every 5 minutes to rotate which event is on special offer.
-- **ordering** — Web API that subscribes to the `orders` topic. When an order arrives it sends a confirmation email via the Dapr SMTP output binding (which targets MailPit locally).
+- **catalog** — Web API that returns the list of events from a PostgreSQL database (via EF Core + Npgsql). The connection string is injected by Aspire. A Dapr cron binding fires every 5 minutes to rotate which event is on special offer. The Dapr secret store is also exercised on every read for the demo (logs a connection string read from `secrets.json`).
+- **ordering** — Web API that subscribes to the `orders` topic. Persists the order to its own PostgreSQL database via the **Dapr state store with the transactional outbox pattern enabled** — the state write atomically publishes an `order-confirmed` event on the same transaction. A second handler subscribes to `order-confirmed` and sends the confirmation email via the Dapr SMTP output binding, guaranteeing the email is only sent once the order has been durably persisted.
+
+The basket stays on Redis on purpose — it is ephemeral session state and Redis is the right backend for that. PostgreSQL is used for the things that need to outlive a process restart (catalog data, order history).
 
 Dapr components live in `dapr/components/`:
 
-| File                    | Component name | Purpose                                       |
-|-------------------------|----------------|-----------------------------------------------|
-| `pubsub.yaml`           | `pubsub`       | Redis pub/sub used for order submission       |
-| `stateStore.yml`        | `shopstate`    | Redis state store for the shopping basket     |
-| `email.yml`             | `sendmail`     | SMTP output binding pointed at MailPit        |
-| `cron.yml`              | `scheduled`    | Cron input binding that calls the catalog     |
-| `localSecretStore.yml`  | `secretstore`  | Local file secret store (reads `secrets.json`) |
+| File                    | Component name | Purpose                                                            |
+|-------------------------|----------------|--------------------------------------------------------------------|
+| `pubsub.yaml`           | `pubsub`       | Redis pub/sub (orders, order-confirmed)                            |
+| `stateStore.yml`        | `shopstate`    | Redis state store for the shopping basket                          |
+| `orderstore.yaml`       | `orderstore`   | PostgreSQL state store for orders, with transactional outbox       |
+| `email.yml`             | `sendmail`     | SMTP output binding pointed at MailPit                             |
+| `cron.yml`              | `scheduled`    | Cron input binding that calls the catalog                          |
+| `localSecretStore.yml`  | `secretstore`  | Local file secret store (reads `secrets.json`)                     |
 
-The Aspire AppHost wires the same components folder into every Dapr sidecar via `DaprSidecarOptions.ResourcesPaths`.
+The Aspire AppHost wires the same components folder into every Dapr sidecar via `DaprSidecarOptions.ResourcesPaths`. Component-level `scopes:` restrict the order store to the `ordering` service only.
 
 ## Deploying
 
-The `aks-deploy.ps1` and `azure-container-apps-deploy.ps1` scripts contain the steps to deploy this to Azure. They are reference scripts — read them before running, you'll need to pick unique resource names. Kubernetes manifests live in `deploy/`, and the ACA-flavoured Dapr components live in `dapr/containerapps-components/`.
+The `aks-deploy.ps1` and `azure-container-apps-deploy.ps1` scripts and the manifests under `deploy/` and `dapr/containerapps-components/` were last current for the Dapr 1.13 / .NET 8 era. They predate the move to PostgreSQL and the outbox pattern and are **out of date**. Bringing them back to parity is tracked as a separate piece of work — until that lands, treat the [`dapr-1-13`](https://github.com/markheath/globoticket-dapr/tree/dapr-1-13) branch as the source of truth for working K8s/ACA deploys.
 
 ## Notable tooling choices
 
 - **`Aspire.AppHost.Sdk` 13.x** with [`CommunityToolkit.Aspire.Hosting.Dapr`](https://github.com/CommunityToolkit/Aspire/tree/main/src/CommunityToolkit.Aspire.Hosting.Dapr) — the Microsoft `Aspire.Hosting.Dapr` package was handed to the Community Toolkit.
+- **PostgreSQL** for the catalog and orders, via `Aspire.Hosting.PostgreSQL` and the Aspire `Aspire.Npgsql.EntityFrameworkCore.PostgreSQL` integration on the consumer side. One Postgres instance, two databases (`catalogdb`, `orderingdb`) with `WithDataVolume()` so data survives restarts.
 - **[MailPit](https://mailpit.axllent.org/)** instead of maildev for local SMTP capture — actively maintained, has a first-party Aspire integration.
 - **`Microsoft.AspNetCore.OpenApi` + [Scalar](https://scalar.com/)** instead of Swashbuckle — Swashbuckle was removed from the Microsoft ASP.NET Core Web API template in .NET 9.
 
