@@ -62,7 +62,7 @@ public class EventRepository : IEventRepository
         try
         {
           var connectionString = await GetConnectionString();
-          logger.LogInformation($"Connection string {connectionString}");
+          logger.LogInformation("Connection string {ConnectionString}", connectionString);
         }
         catch(Exception e)
         {

@@ -13,4 +13,8 @@
     <PackageReference Include="Dapr.AspNetCore" Version="1.17.9" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\servicedefaults\servicedefaults.csproj" />
+  </ItemGroup>
+
 </Project>

@@ -51,7 +51,7 @@ public class CheckoutController : Controller
             var currentBasketId = Request.Cookies.GetCurrentBasketId(settings);
             checkout.BasketId = currentBasketId;
 
-            logger.LogInformation($"Received an order from {checkout.Name}");
+            logger.LogInformation("Received an order from {CustomerName}", checkout.Name);
             var orderId = await orderSubmissionService.SubmitOrder(checkout);
             await shoppingBasketService.ClearBasket(currentBasketId);
 

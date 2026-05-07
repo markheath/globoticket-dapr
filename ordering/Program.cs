@@ -3,6 +3,7 @@ using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.AddServiceDefaults();
 builder.Services.AddControllers().AddDapr();
 builder.Services.AddOpenApi();
 builder.Services.AddTransient<EmailSender>();
@@ -16,6 +17,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCloudEvents();
+app.MapDefaultEndpoints();
 app.MapSubscribeHandler();
 app.MapControllers();
 

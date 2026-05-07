@@ -3,6 +3,7 @@ using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.AddServiceDefaults();
 builder.Services.AddSingleton<IEventRepository, EventRepository>();
 builder.Services.AddControllers().AddDapr();
 builder.Services.AddOpenApi();
@@ -15,6 +16,7 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
 }
 
+app.MapDefaultEndpoints();
 app.MapControllers();
 
 app.Run();

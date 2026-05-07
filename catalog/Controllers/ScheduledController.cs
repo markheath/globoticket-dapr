@@ -21,7 +21,8 @@ public class ScheduledController : ControllerBase
     public void OnSchedule()
     {
         var specialOfferEvent = eventRepository.UpdateSpecialOffer();
-        var now = DateTime.Now.ToString("HH:mm:ss");
-        logger.LogInformation($"{now} scheduled endpoint called: {specialOfferEvent.Name} is now on sale for {specialOfferEvent.Price}");
+        logger.LogInformation(
+            "Scheduled endpoint called: {EventName} is now on sale for {Price}",
+            specialOfferEvent.Name, specialOfferEvent.Price);
     }
 }

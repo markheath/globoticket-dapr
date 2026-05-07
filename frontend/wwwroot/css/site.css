@@ -13,11 +13,21 @@ a {
 }
 
 .btn-primary {
+    --bs-btn-color: #fff;
+    --bs-btn-bg: #51b5b1;
+    --bs-btn-border-color: #51b5b1;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: #3fa09c;
+    --bs-btn-hover-border-color: #3fa09c;
+    --bs-btn-focus-shadow-rgb: 81, 181, 177;
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: #348984;
+    --bs-btn-active-border-color: #348984;
     border-radius: 30px;
-    background-color: #51b5b1;
-    padding: 10px 25px 10px 25px;
+    padding: 10px 25px;
     font-size: 0.9em;
     font-family: opensans-bold;
+    text-decoration: none;
 }
 
 .filterButton {
@@ -27,7 +37,7 @@ a {
     width: 100px;
     height: 40px;
     color: #51b5b1;
-    font-size: 0,8em;
+    font-size: 0.8em;
 }
 
 .big {
@@ -136,4 +146,8 @@ footer {
   color: white;
   font-weight: bold;
   padding: 3px;
+}
+
+.checkout-form {
+  max-width: 600px;
 }

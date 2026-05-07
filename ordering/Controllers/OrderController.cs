@@ -22,7 +22,7 @@ public class OrderController : ControllerBase
     [Topic("pubsub", "orders")]
     public async Task<IActionResult> Submit(OrderForCreation order)
     {
-        logger.LogInformation($"Received a new order from {order.CustomerDetails.Name}");
+        logger.LogInformation("Received a new order from {CustomerName}", order.CustomerDetails.Name);
         await emailSender.SendEmailForOrder(order);
         return Ok();
     }

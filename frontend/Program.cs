@@ -5,6 +5,7 @@ using Dapr.Client;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.AddServiceDefaults();
 builder.Services.AddControllersWithViews();
 builder.Services.AddDaprClient();
 
@@ -27,6 +28,7 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthorization();
 
+app.MapDefaultEndpoints();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=EventCatalog}/{action=Index}/{id?}");

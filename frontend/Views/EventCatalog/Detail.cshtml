@@ -1,9 +1,9 @@
-﻿@model GloboTicket.Frontend.Models.Api.Event
+@model GloboTicket.Frontend.Models.Api.Event
 <div class="row mt-5">
     <div class="col-md-4">
         <img src="@Model!.ImageUrl" class="detailImage" alt="Artist pic" />
     </div>
-    <div class="col-md-6 ml-1">
+    <div class="col-md-6 ms-1">
         <div class="row">
             <div class="columnHeader">SHOW</div>
         </div>
@@ -21,11 +21,12 @@
         </div>
         <div class="row mt-5">
             <span>
-            <span class="bold big">$@Model.Price</span>
-            <span class="mt-1"> PER TICKET &nbsp;</span>
-            @if(Model.IsOnSpecialOffer) {
-                <span class="specialOffer">SPECIAL&nbsp;OFFER</span>
-            }
+                <span class="bold big">$@Model.Price</span>
+                <span class="mt-1"> PER TICKET &nbsp;</span>
+                @if (Model.IsOnSpecialOffer)
+                {
+                    <span class="specialOffer">SPECIAL&nbsp;OFFER</span>
+                }
             </span>
         </div>
     </div>
@@ -36,11 +37,11 @@
     </div>
 </div>
 <div class="row mt-4">
-    <div class="col offset-4">
+    <div class="col offset-md-4">
         <form class="form" asp-action="AddLine" asp-controller="ShoppingBasket">
             <div class="row">
                 <label class="columnHeader mt-2">QUANTITY:</label>
-                <select name="TicketAmount" class="ml-5 w-25">
+                <select name="TicketAmount" class="ms-5 w-25">
                     <option value="1">1</option>
                     <option value="2">2</option>
                     <option value="3">3</option>
@@ -49,10 +50,8 @@
                 </select>
                 <input asp-for="EventId" type="hidden" />
                 <input asp-for="Price" type="hidden" />
-                <button type="submit" class="btn btn-primary ml-4 w-50">PLACE ORDER</button>
+                <button type="submit" class="btn btn-primary ms-4 w-50">PLACE ORDER</button>
             </div>
         </form>
     </div>
 </div>
-
-

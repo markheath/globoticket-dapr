@@ -1,47 +1,55 @@
-﻿@model GloboTicket.Frontend.Models.View.CheckoutViewModel
+@model GloboTicket.Frontend.Models.View.CheckoutViewModel
 
-<div class="row">
-        <h2>Checkout</h2>
-        <!-- Tag helpers https://docs.microsoft.com/en-US/aspnet/core/mvc/views/tag-helpers/intro?view=aspnetcore-5.0 -->
+<div class="checkout-form">
+    <h2 class="mb-4">Checkout</h2>
 
-            <form class="form" asp-action="Purchase">
-         <div class="form-group">
-            <label asp-for="Name">Name</label>
-            <span class="text-danger" asp-validation-for="Name"></span>
+    <form class="form" asp-action="Purchase">
+        <div class="mb-3">
+            <label asp-for="Name" class="form-label">Name</label>
             <input class="form-control" asp-for="Name" />
+            <span class="text-danger" asp-validation-for="Name"></span>
         </div>
-        <div class="form-group">
-            <label asp-for="Email">Email</label>
+
+        <div class="mb-3">
+            <label asp-for="Email" class="form-label">Email</label>
+            <input class="form-control" asp-for="Email" type="email" />
             <span class="text-danger" asp-validation-for="Email"></span>
-            <input class="form-control" asp-for="Email" />
         </div>
-        <div class="form-group">
-            <label asp-for="Address">Address</label>
-            <span class="text-danger" asp-validation-for="Address"></span>
+
+        <div class="mb-3">
+            <label asp-for="Address" class="form-label">Address</label>
             <input class="form-control" asp-for="Address" />
+            <span class="text-danger" asp-validation-for="Address"></span>
         </div>
-        <div class="form-group">
-            <label asp-for="Town">Town</label>
-            <span class="text-danger" asp-validation-for="Town"></span>
-            <input class="form-control" asp-for="Town" />
-        </div>
-        <div class="form-group">
-            <label asp-for="PostalCode">Postal Code</label>
-            <span class="text-danger" asp-validation-for="PostalCode"></span>
-            <input class="form-control" asp-for="PostalCode" />        
-        </div>
-        <div class="form-group">
-            <label asp-for="CreditCard">Credit Card</label>
-            <span class="text-danger" asp-validation-for="CreditCard"></span>
-            <input class="form-control" asp-for="CreditCard" />
-        </div>
-        <div class="form-group">
-            <label asp-for="CreditCardDate">Expiry Date</label>
-            <span class="text-danger" asp-validation-for="CreditCardDate"></span>
-            <input class="form-control" asp-for="CreditCardDate" />
-        </div>
-        <button type="submit" class="btn btn-primary ml-4 w-50">SUBMIT ORDER</button>
-    </form>  
 
+        <div class="row mb-3">
+            <div class="col-md-8">
+                <label asp-for="Town" class="form-label">Town</label>
+                <input class="form-control" asp-for="Town" />
+                <span class="text-danger" asp-validation-for="Town"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="PostalCode" class="form-label">Postal Code</label>
+                <input class="form-control" asp-for="PostalCode" />
+                <span class="text-danger" asp-validation-for="PostalCode"></span>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <label asp-for="CreditCard" class="form-label">Credit Card</label>
+                <input class="form-control" asp-for="CreditCard" inputmode="numeric" autocomplete="cc-number" />
+                <span class="text-danger" asp-validation-for="CreditCard"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="CreditCardDate" class="form-label">Expiry (MM/YY)</label>
+                <input class="form-control" asp-for="CreditCardDate" placeholder="MM/YY" autocomplete="cc-exp" />
+                <span class="text-danger" asp-validation-for="CreditCardDate"></span>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end">
+            <button type="submit" class="btn btn-primary">SUBMIT ORDER</button>
+        </div>
+    </form>
 </div>
-

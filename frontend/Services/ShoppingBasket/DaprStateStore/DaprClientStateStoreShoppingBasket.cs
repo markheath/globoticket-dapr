@@ -27,7 +27,7 @@ public class DaprClientStateStoreShoppingBasket : IShoppingBasketService
 
     public async Task<BasketLine> AddToBasket(Guid basketId, BasketLineForCreation basketLineForCreation)
     {
-        logger.LogInformation($"ADD TO BASKET {basketId}");
+        logger.LogInformation("ADD TO BASKET {BasketId}", basketId);
         var basket = await GetBasketFromStateStore(basketId);
         var @event = await GetEventFromStateStore(basketLineForCreation.EventId);
 
@@ -41,14 +41,14 @@ public class DaprClientStateStoreShoppingBasket : IShoppingBasketService
             Price = basketLineForCreation.Price
         };
         basket.Lines.Add(basketLine);
-        logger.LogInformation($"SAVING BASKET {basket.BasketId}");
+        logger.LogInformation("SAVING BASKET {BasketId}", basket.BasketId);
         await SaveBasketToStateStore(basket);
         return basketLine;
     }
 
     public async Task<Basket> GetBasket(Guid basketId)
     {
-        logger.LogInformation($"GET BASKET {basketId}");
+        logger.LogInformation("GET BASKET {BasketId}", basketId);
         var basket = await GetBasketFromStateStore(basketId);
 
         return new Basket() { BasketId = basketId, NumberOfItems = basket.Lines.Count, UserId = basket.UserId };
@@ -79,13 +79,13 @@ public class DaprClientStateStoreShoppingBasket : IShoppingBasketService
     {
         var key = $"basket-{basket.BasketId}";
         await daprClient.SaveStateAsync(stateStoreName, key, basket);
-        logger.LogInformation($"Created new basket in state store {key}");
+        logger.LogInformation("Saved basket to state store {Key}", key);
     }
 
     private async Task SaveEventToStateStore(Event @event)
     {
         var key = $"event-{@event.EventId}";
-        logger.LogInformation($"Saving event to state store {key}");
+        logger.LogInformation("Saving event to state store {Key}", key);
         await daprClient.SaveStateAsync(stateStoreName, key, @event);
     }
 
@@ -97,7 +97,7 @@ public class DaprClientStateStoreShoppingBasket : IShoppingBasketService
         if (basket == null)
         {
             if (basketId == Guid.Empty) basketId = Guid.NewGuid();
-            logger.LogInformation($"CREATING NEW BASKET {basketId}");
+            logger.LogInformation("CREATING NEW BASKET {BasketId}", basketId);
             basket = new StateStoreBasket();
             basket.BasketId = basketId;
             basket.UserId = settings.UserId;
