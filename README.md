@@ -36,28 +36,31 @@ Dapr sidecar ports are *not* pinned — Aspire allocates them dynamically, and t
 
 Distributed traces, structured logs, and resource metrics are all in the dashboard.
 
-If you need a dummy credit card number on the checkout page, use `4242424242424242` or `5555555555554444`.
+If you need a dummy credit card number on the checkout page, use `4242424242424242` or `5555555555554444`. Any card number ending in `0000` is rejected by the mock card-charge step in the checkout workflow — useful for demonstrating the saga compensation path.
 
 ## Architecture overview
 
 - **frontend** — ASP.NET Core MVC site. Lets visitors browse the catalog and place orders. Talks to `catalog` via Dapr service invocation, stores the shopping basket in a Dapr state store (Redis), and submits orders via Dapr pub/sub.
-- **catalog** — Web API that returns the list of events from a PostgreSQL database (via EF Core + Npgsql). The connection string is injected by Aspire. A Dapr cron binding fires every 5 minutes to rotate which event is on special offer.
-- **ordering** — Web API that subscribes to the `orders` topic. Persists the order to its own PostgreSQL database via the **Dapr state store with the transactional outbox pattern enabled** — the state write atomically publishes an `order-confirmed` event on the same transaction. A second handler subscribes to `order-confirmed` and sends the confirmation email via the Dapr SMTP output binding, guaranteeing the email is only sent once the order has been durably persisted. The SMTP binding's credentials are pulled from the Dapr **secret store** via `secretKeyRef`, so the component YAML never contains the username or password directly.
+- **catalog** — Web API that returns the list of events from a PostgreSQL database (via EF Core + Npgsql). The connection string is injected by Aspire. A Dapr cron binding fires every 5 minutes to rotate which event is on special offer and reset ticket inventory back to its seeded levels. Exposes `POST/DELETE /event/{id}/reserve` for the workflow to atomically reserve and release tickets.
+- **ordering** — Web API that subscribes to the `orders` topic and hands each incoming order to a **Dapr Workflow** (`CheckoutWorkflow`). The workflow runs the saga: reserve tickets for every line → mock-charge the card → persist the order to a state store → send the confirmation email via the SMTP output binding. If reservation or charge fails, every reservation made so far is released as a compensating action. Workflow state lives in a Redis store flagged `actorStateStore: true`. The SMTP binding's credentials are pulled from the Dapr **secret store** via `secretKeyRef`, so the component YAML never contains the username or password directly.
 
 The basket stays on Redis on purpose — it is ephemeral session state and Redis is the right backend for that. PostgreSQL is used for the things that need to outlive a process restart (catalog data, order history).
 
+The seed data is intentionally varied so the workflow's branches can all be demonstrated: one event with plenty of stock (happy path), one nearly sold out (small order succeeds, larger order triggers compensation), and one fully sold out (immediate failure).
+
 Dapr components live in `dapr/components/`:
 
-| File                    | Component name | Purpose                                                            |
-|-------------------------|----------------|--------------------------------------------------------------------|
-| `pubsub.yaml`           | `pubsub`       | Redis pub/sub (orders, order-confirmed)                            |
-| `stateStore.yml`        | `shopstate`    | Redis state store for the shopping basket                          |
-| `orderstore.yaml`       | `orderstore`   | PostgreSQL state store for orders, with transactional outbox       |
-| `email.yml`             | `sendmail`     | SMTP output binding pointed at MailPit                             |
-| `cron.yml`              | `scheduled`    | Cron input binding that calls the catalog                          |
-| `localSecretStore.yml`  | `secretstore`  | Local file secret store; supplies SMTP credentials to `sendmail`   |
+| File                    | Component name   | Purpose                                                                          |
+|-------------------------|------------------|----------------------------------------------------------------------------------|
+| `pubsub.yaml`           | `pubsub`         | Redis pub/sub (orders topic — workflow trigger)                                  |
+| `stateStore.yml`        | `shopstate`      | Redis state store for the shopping basket                                        |
+| `orderstore.yaml`       | `orderstore`     | PostgreSQL state store for persisted orders                                      |
+| `workflowstate.yml`     | `workflowstate`  | Redis state store for Dapr Workflow runtime (actor-backed)                       |
+| `email.yml`             | `sendmail`       | SMTP output binding pointed at MailPit                                           |
+| `cron.yml`              | `scheduled`      | Cron input binding that calls the catalog                                        |
+| `localSecretStore.yml`  | `secretstore`    | Local file secret store; supplies SMTP credentials to `sendmail`                 |
 
-The Aspire AppHost wires the same components folder into every Dapr sidecar via `DaprSidecarOptions.ResourcesPaths`. Component-level `scopes:` restrict the order store to the `ordering` service only.
+The Aspire AppHost wires the same components folder into every Dapr sidecar via `DaprSidecarOptions.ResourcesPaths`. Component-level `scopes:` restrict the order and workflow stores to the `ordering` service only.
 
 ## Deploying
 

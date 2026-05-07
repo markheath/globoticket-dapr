@@ -8,13 +8,5 @@ spec:
   metadata:
     - name: connectionString
       value: "host=localhost port=5432 user=postgres password=postgres dbname=orderingdb"
-    # Transactional outbox: state writes performed via the Dapr transactional
-    # state-store API are atomically published to the configured pubsub topic.
-    # A subscription on `order-confirmed` triggers the email send only after
-    # the order has been durably persisted.
-    - name: outboxPublishPubsub
-      value: "pubsub"
-    - name: outboxPublishTopic
-      value: "order-confirmed"
 scopes:
   - ordering

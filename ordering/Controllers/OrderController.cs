@@ -1,6 +1,7 @@
 using Dapr;
+using Dapr.Workflow;
 using GloboTicket.Ordering.Model;
-using GloboTicket.Ordering.Services;
+using GloboTicket.Ordering.Workflows;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GloboTicket.Ordering.Controllers;
@@ -9,40 +10,52 @@ namespace GloboTicket.Ordering.Controllers;
 [Route("[controller]")]
 public class OrderController : ControllerBase
 {
-    private readonly OrderRepository orderRepository;
-    private readonly EmailSender emailSender;
+    private readonly DaprWorkflowClient workflowClient;
     private readonly ILogger<OrderController> logger;
 
-    public OrderController(
-        OrderRepository orderRepository,
-        EmailSender emailSender,
-        ILogger<OrderController> logger)
+    public OrderController(DaprWorkflowClient workflowClient, ILogger<OrderController> logger)
     {
-        this.orderRepository = orderRepository;
-        this.emailSender = emailSender;
+        this.workflowClient = workflowClient;
         this.logger = logger;
     }
 
-    // Step 1: receive the order from the frontend and persist it. The Dapr
-    // state-store outbox atomically publishes an "order-confirmed" event on
-    // the pubsub component as part of the same transaction.
+    // The pubsub trigger is preserved as the entry point for the order
+    // pipeline so the demo continues to teach pub/sub. The handler now
+    // hands off to a Dapr Workflow which owns the saga end-to-end:
+    // reserve → charge → persist → email, with compensating release of
+    // any reserved tickets when an earlier stage fails.
     [HttpPost("", Name = "SubmitOrder")]
     [Topic("pubsub", "orders")]
     public async Task<IActionResult> Submit(OrderForCreation order)
     {
-        logger.LogInformation("Persisting new order from {CustomerName}", order.CustomerDetails.Name);
-        await orderRepository.SaveAsync(order);
-        return Ok();
+        var instanceId = order.OrderId.ToString();
+        logger.LogInformation("Starting checkout workflow {InstanceId} for {Customer}",
+            instanceId, order.CustomerDetails.Name);
+
+        await workflowClient.ScheduleNewWorkflowAsync(
+            name: nameof(CheckoutWorkflow),
+            instanceId: instanceId,
+            input: new CheckoutInput(order));
+
+        return Accepted();
     }
 
-    // Step 2: outbox-published event triggers email send. The email only fires
-    // if the persistence transaction in step 1 succeeded.
-    [HttpPost("confirmed", Name = "OrderConfirmed")]
-    [Topic("pubsub", "order-confirmed")]
-    public async Task<IActionResult> Confirmed(OrderForCreation order)
+    // Convenience endpoint for poking at workflow state from the Aspire
+    // dashboard or a .http file. Not used by the frontend.
+    [HttpGet("{orderId}/status", Name = "OrderStatus")]
+    public async Task<IActionResult> Status(Guid orderId)
     {
-        logger.LogInformation("Order persisted, sending confirmation email to {Email}", order.CustomerDetails.Email);
-        await emailSender.SendEmailForOrder(order);
-        return Ok();
+        var state = await workflowClient.GetWorkflowStateAsync(orderId.ToString());
+        if (state is null || !state.Exists)
+        {
+            return NotFound();
+        }
+        return Ok(new
+        {
+            state.RuntimeStatus,
+            state.CreatedAt,
+            state.LastUpdatedAt,
+            Output = state.ReadOutputAs<CheckoutResult>(),
+        });
     }
 }

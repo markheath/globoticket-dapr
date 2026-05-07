@@ -1,0 +1,19 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: workflowstate
+spec:
+  type: state.redis
+  version: v1
+  metadata:
+    - name: redisHost
+      value: localhost:6379
+    - name: redisPassword
+      value: ""
+    # Dapr Workflows ride on the actor runtime, which requires a state
+    # store flagged actorStateStore: true. Kept separate from shopstate
+    # so the basket store doesn't accidentally double as actor storage.
+    - name: actorStateStore
+      value: "true"
+scopes:
+  - ordering
