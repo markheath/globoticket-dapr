@@ -3,10 +3,10 @@
 // Component auth model:
 //   pubsub        -> Service Bus, managed identity (azureClientId)
 //   secretstore   -> Key Vault, managed identity (vaultName + azureClientId)
-//   shopstate     -> Redis, password loaded from Key Vault via component secret ref
-//   workflowstate -> Redis, password loaded from Key Vault via component secret ref
+//   shopstate     -> Postgres, connection string from Key Vault via component secret ref
+//   workflowstate -> Postgres, connection string from Key Vault via component secret ref
 //   orderstore    -> Postgres, full connection string loaded from Key Vault via component secret ref
-//   sendmail      -> SMTP, points at the internal MailPit container app, creds from Key Vault
+//   sendmail      -> SMTP, points at the internal MailPit container app
 //   scheduled     -> cron binding, no backing service
 //
 // In every case where a secret is needed, the component declares a Key
@@ -25,7 +25,6 @@ param keyVaultName string
 param managedIdentityClientId string
 
 param serviceBusNamespace string
-param redisHostname string
 
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2023-09-01' existing = {
   name: last(split(logAnalyticsWorkspaceId, '/'))
@@ -108,30 +107,29 @@ resource secretstoreComponent 'Microsoft.App/managedEnvironments/daprComponents@
   }
 }
 
-// -------- shopstate: Redis, password resolved via the secretstore component --------
+// -------- shopstate: Postgres, connection string from Key Vault --------
 // ACA's daprComponents schema does NOT support keyVaultUrl on per-component
 // secrets. Instead, components reference a Dapr secretstore component by
 // name; the Dapr runtime then resolves `secretRef` values through that
 // component (which talks to Key Vault using the user-assigned MI).
+//
+// shopstate and workflowstate share the `daprstate` Postgres database with
+// different `tableName` metadata so their data stays separated.
 resource shopstateComponent 'Microsoft.App/managedEnvironments/daprComponents@2024-03-01' = {
   parent: acaEnv
   name: 'shopstate'
   properties: {
-    componentType: 'state.redis'
-    version: 'v1'
+    componentType: 'state.postgresql'
+    version: 'v2'
     secretStoreComponent: 'secretstore'
     metadata: [
       {
-        name: 'redisHost'
-        value: '${redisHostname}:6380'
+        name: 'connectionString'
+        secretRef: 'daprstate-connection-string'
       }
       {
-        name: 'redisPassword'
-        secretRef: 'redis-password'
-      }
-      {
-        name: 'enableTLS'
-        value: 'true'
+        name: 'tableName'
+        value: 'basket_state'
       }
     ]
     scopes: [
@@ -143,28 +141,25 @@ resource shopstateComponent 'Microsoft.App/managedEnvironments/daprComponents@20
   ]
 }
 
-// -------- workflowstate: Redis with actorStateStore: true --------
+// -------- workflowstate: Postgres with actorStateStore: true --------
 // Dapr Workflow rides on the actor runtime, so this store has to advertise
-// itself as actor-capable.
+// itself as actor-capable. Postgres is on Dapr's actor-capable list (Redis
+// is too — we picked Postgres to drop Azure Cache for Redis).
 resource workflowstateComponent 'Microsoft.App/managedEnvironments/daprComponents@2024-03-01' = {
   parent: acaEnv
   name: 'workflowstate'
   properties: {
-    componentType: 'state.redis'
-    version: 'v1'
+    componentType: 'state.postgresql'
+    version: 'v2'
     secretStoreComponent: 'secretstore'
     metadata: [
       {
-        name: 'redisHost'
-        value: '${redisHostname}:6380'
+        name: 'connectionString'
+        secretRef: 'daprstate-connection-string'
       }
       {
-        name: 'redisPassword'
-        secretRef: 'redis-password'
-      }
-      {
-        name: 'enableTLS'
-        value: 'true'
+        name: 'tableName'
+        value: 'workflow_state'
       }
       {
         name: 'actorStateStore'

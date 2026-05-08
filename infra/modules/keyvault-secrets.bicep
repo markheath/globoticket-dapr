@@ -8,9 +8,6 @@ param postgresFqdn string
 param postgresAdminLogin string = 'pgadmin'
 @secure()
 param postgresPassword string
-param redisHostname string
-@secure()
-param redisPassword string
 param serviceBusNamespace string
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
@@ -39,29 +36,22 @@ resource orderingConnectionString 'Microsoft.KeyVault/vaults/secrets@2023-07-01'
   }
 }
 
+// Shared by the shopstate and workflowstate Dapr components, which keep
+// their data separate via different `tableName` metadata.
+resource daprStateConnectionString 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  parent: keyVault
+  name: 'daprstate-connection-string'
+  properties: {
+    value: 'host=${postgresFqdn} port=5432 user=${postgresAdminLogin} password=${postgresPassword} dbname=daprstate sslmode=require'
+    contentType: 'text/plain'
+  }
+}
+
 resource postgresPasswordSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
   parent: keyVault
   name: 'postgres-password'
   properties: {
     value: postgresPassword
-    contentType: 'text/plain'
-  }
-}
-
-resource redisHostSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  parent: keyVault
-  name: 'redis-hostname'
-  properties: {
-    value: redisHostname
-    contentType: 'text/plain'
-  }
-}
-
-resource redisPasswordSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  parent: keyVault
-  name: 'redis-password'
-  properties: {
-    value: redisPassword
     contentType: 'text/plain'
   }
 }

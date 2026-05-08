@@ -40,11 +40,11 @@ If you need a dummy credit card number on the checkout page, use `42424242424242
 
 ## Architecture overview
 
-- **frontend** — ASP.NET Core MVC site. Lets visitors browse the catalog and place orders. Talks to `catalog` via Dapr service invocation, stores the shopping basket in a Dapr state store (Redis), and submits orders via Dapr pub/sub.
+- **frontend** — ASP.NET Core MVC site. Lets visitors browse the catalog and place orders. Talks to `catalog` via Dapr service invocation, stores the shopping basket in a Dapr state store, and submits orders via Dapr pub/sub.
 - **catalog** — Web API that returns the list of events from a PostgreSQL database (via EF Core + Npgsql). The connection string is injected by Aspire. A Dapr cron binding fires every 5 minutes to rotate which event is on special offer and reset ticket inventory back to its seeded levels. Exposes `POST/DELETE /event/{id}/reserve` for the workflow to atomically reserve and release tickets.
-- **ordering** — Web API that subscribes to the `orders` topic and hands each incoming order to a **Dapr Workflow** (`CheckoutWorkflow`). The workflow runs the saga: reserve tickets for every line → mock-charge the card → persist the order to a state store → send the confirmation email via the SMTP output binding. If reservation or charge fails, every reservation made so far is released as a compensating action. Workflow state lives in a Redis store flagged `actorStateStore: true`. The SMTP binding's credentials are pulled from the Dapr **secret store** via `secretKeyRef`, so the component YAML never contains the username or password directly.
+- **ordering** — Web API that subscribes to the `orders` topic and hands each incoming order to a **Dapr Workflow** (`CheckoutWorkflow`). The workflow runs the saga: reserve tickets for every line → mock-charge the card → persist the order to a state store → send the confirmation email via the SMTP output binding. If reservation or charge fails, every reservation made so far is released as a compensating action. Workflow state lives in a store flagged `actorStateStore: true`, since Dapr Workflow rides on the actor runtime. The SMTP binding's credentials are pulled from the Dapr **secret store** via `secretKeyRef`, so the component YAML never contains the username or password directly.
 
-The basket stays on Redis on purpose — it is ephemeral session state and Redis is the right backend for that. PostgreSQL is used for the things that need to outlive a process restart (catalog data, order history).
+The basket and workflow stores run on Redis locally and on Postgres in Azure. Same app code, different YAML — that's the Dapr portability story in one diff. Locally `dapr init` already gives you Redis, so there's nothing to provision; in Azure the saving is real (Azure Cache for Redis takes 15–25 minutes to provision, and we already have Postgres for `orderstore`). The order history lives in Postgres in both environments because it has to outlive a process restart.
 
 The seed data is intentionally varied so the workflow's branches can all be demonstrated: one event with plenty of stock (happy path), one nearly sold out (small order succeeds, larger order triggers compensation), and one fully sold out (immediate failure).
 
@@ -52,10 +52,10 @@ Dapr components live in `dapr/components/`:
 
 | File                    | Component name   | Purpose                                                                          |
 |-------------------------|------------------|----------------------------------------------------------------------------------|
-| `pubsub.yaml`           | `pubsub`         | Redis pub/sub (orders topic — workflow trigger)                                  |
-| `stateStore.yml`        | `shopstate`      | Redis state store for the shopping basket                                        |
-| `orderstore.yaml`       | `orderstore`     | PostgreSQL state store for persisted orders                                      |
-| `workflowstate.yml`     | `workflowstate`  | Redis state store for Dapr Workflow runtime (actor-backed)                       |
+| `pubsub.yaml`           | `pubsub`         | Redis pub/sub (orders topic — workflow trigger; Service Bus topics in Azure)     |
+| `stateStore.yml`        | `shopstate`      | Redis state store for the shopping basket (Postgres in Azure)                    |
+| `orderstore.yaml`       | `orderstore`     | Postgres state store for persisted orders                                        |
+| `workflowstate.yml`     | `workflowstate`  | Redis state store for Dapr Workflow runtime, actor-backed (Postgres in Azure)    |
 | `email.yml`             | `sendmail`       | SMTP output binding pointed at MailPit                                           |
 | `cron.yml`              | `scheduled`      | Cron input binding that calls the catalog                                        |
 | `localSecretStore.yml`  | `secretstore`    | Local file secret store; supplies SMTP credentials to `sendmail`                 |
@@ -64,7 +64,7 @@ The Aspire AppHost wires the same components folder into every Dapr sidecar via 
 
 ## Deploying to Azure Container Apps
 
-Deployment is driven by the [Azure Developer CLI (`azd`)](https://learn.microsoft.com/azure/developer/azure-developer-cli/). The Bicep templates under `infra/` provision a single resource group containing all the managed services the demo needs (Service Bus, Postgres, Redis, Key Vault, ACR, Log Analytics, ACA environment, the Aspire dashboard, MailPit) and five Container Apps. The dapr components are declared inline in Bicep against the ACA managed environment.
+Deployment is driven by the [Azure Developer CLI (`azd`)](https://learn.microsoft.com/azure/developer/azure-developer-cli/). The Bicep templates under `infra/` provision a single resource group containing all the managed services the demo needs (Service Bus, Postgres, Key Vault, ACR, Log Analytics, ACA environment, the Aspire dashboard, MailPit) and six Container Apps. The dapr components are declared inline in Bicep against the ACA managed environment.
 
 ### Prerequisites
 
@@ -112,9 +112,8 @@ The headline change vs. the previous deploy scripts is that **no plaintext crede
 - ✅ **ACR pulls** use the user-assigned managed identity (no admin user, no docker login)
 - ✅ **Service Bus** access is via managed identity — the `pubsub` Dapr component carries only `namespaceName` + `azureClientId`, no connection string
 - ✅ **Key Vault** access is via managed identity, used by the `secretstore` Dapr component and by the apps directly through ACA's Key Vault secret references
-- ✅ **Postgres password and Redis access key** are stored in Key Vault. The `orderstore`, `shopstate`, and `workflowstate` Dapr components reference them via `secretRef` + `keyVaultUrl`. The catalog's connection string is delivered to the container the same way
+- ✅ **Postgres connection strings** are stored in Key Vault. The `orderstore`, `shopstate`, and `workflowstate` Dapr components reference them via `secretRef` + `keyVaultUrl`. The catalog's connection string is delivered to the container the same way
 - ⚠️ **Postgres** still authenticates with a password (held in Key Vault). Switching to Microsoft Entra auth requires a post-deploy hook that registers the MI as a Postgres role plus a token-fetching `PasswordProvider` in the catalog. That's the obvious next hardening step.
-- ⚠️ **Redis** also authenticates with an access key. Entra auth on Azure Cache for Redis is supported on the Premium SKU and via Redis Enterprise; switching would require an SKU bump.
 - ⚠️ All managed services have **public networking**. Adding private endpoints + private DNS zones is a separate hardening pass.
 - ⚠️ One **shared user-assigned MI** is used for all three custom apps. Splitting per-app gives tighter least-privilege at the cost of more role assignments — tracked as a follow-up.
 - ⚠️ The frontend ingress is **unauthenticated** by design (it's a demo storefront). A real deployment would put EasyAuth or similar in front.
@@ -122,7 +121,7 @@ The headline change vs. the previous deploy scripts is that **no plaintext crede
 ## Notable tooling choices
 
 - **`Aspire.AppHost.Sdk` 13.x** with [`CommunityToolkit.Aspire.Hosting.Dapr`](https://github.com/CommunityToolkit/Aspire/tree/main/src/CommunityToolkit.Aspire.Hosting.Dapr) — the Microsoft `Aspire.Hosting.Dapr` package was handed to the Community Toolkit.
-- **PostgreSQL** for the catalog and orders, via `Aspire.Hosting.PostgreSQL` and the Aspire `Aspire.Npgsql.EntityFrameworkCore.PostgreSQL` integration on the consumer side. One Postgres instance, two databases (`catalogdb`, `orderingdb`) with `WithDataVolume()` so data survives restarts.
+- **PostgreSQL** for the catalog and orders, via `Aspire.Hosting.PostgreSQL` and the Aspire `Aspire.Npgsql.EntityFrameworkCore.PostgreSQL` integration on the consumer side. One Postgres instance, two databases (`catalogdb`, `orderingdb`) with `WithDataVolume()` so data survives restarts. In Azure a third database (`daprstate`) holds the basket and workflow state stores that run on Redis locally.
 - **[MailPit](https://mailpit.axllent.org/)** instead of maildev for local SMTP capture — actively maintained, has a first-party Aspire integration.
 - **`Microsoft.AspNetCore.OpenApi` + [Scalar](https://scalar.com/)** instead of Swashbuckle — Swashbuckle was removed from the Microsoft ASP.NET Core Web API template in .NET 9.
 

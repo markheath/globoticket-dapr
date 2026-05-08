@@ -31,3 +31,27 @@ services:
     docker:
       path: ./Dockerfile
       context: ../
+
+hooks:
+  # Mirror public images (mailpit, aspire-dashboard, caddy) into ACR before
+  # bicep runs. ACA validates image manifests when it creates a container
+  # app resource, so the public images have to be in ACR by the time bicep
+  # tries to provision mailpit / mailpit-ui / aspire-dashboard. The script
+  # also ensures the RG and ACR themselves exist (idempotent), so it works
+  # both for first-time deploys (after the cached env values are seeded by
+  # the first `azd up`) and after `azd down --purge`.
+  preprovision:
+    shell: pwsh
+    run: ./scripts/import-public-images.ps1
+
+  # Print the public endpoints. azd's "Service Endpoints" block only
+  # surfaces URLs for entries in `services:` above (catalog / ordering /
+  # frontend), so the dashboard and MailPit UI need their own line.
+  postprovision:
+    shell: pwsh
+    run: |
+      Write-Host ""
+      Write-Host "Endpoints:"
+      Write-Host "  Frontend:         $env:FRONTEND_URL"
+      Write-Host "  Aspire dashboard: $env:ASPIRE_DASHBOARD_URL"
+      Write-Host "  MailPit UI:       $env:MAILPIT_UI_URL"

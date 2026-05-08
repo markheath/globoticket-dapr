@@ -1,7 +1,8 @@
-// All five Container Apps: catalog, ordering, frontend, mailpit (private),
-// aspire-dashboard. The three .NET services use placeholder images on
-// first deploy — `azd deploy` swaps them for the freshly-built images
-// using the azd-service-name tag as the routing key.
+// All six Container Apps: catalog, ordering, frontend, mailpit (private),
+// mailpit-ui (public Caddy proxy in front of mailpit:8025), aspire-dashboard.
+// The three .NET services use placeholder images on first deploy — `azd
+// deploy` swaps them for the freshly-built images using the azd-service-name
+// tag as the routing key.
 
 param location string
 param tags object
@@ -159,6 +160,59 @@ resource mailpit 'Microsoft.App/containerApps@2024-03-01' = {
               value: 'true'
             }
           ]
+        }
+      ]
+      scale: {
+        minReplicas: 1
+        maxReplicas: 1
+      }
+    }
+  }
+}
+
+// -------- mailpit-ui: public Caddy reverse proxy in front of MailPit --------
+// MailPit's own ingress is TCP-only (so SMTP works), which means its web UI
+// isn't reachable from outside the env. This tiny Caddy app fronts the UI
+// over HTTP so the demo can show the received order confirmation email.
+// Caddy's CLI proxy mode means no Caddyfile or extra config is needed — the
+// container just runs `caddy reverse-proxy --from :8080 --to mailpit:8025`.
+resource mailpitUi 'Microsoft.App/containerApps@2024-03-01' = {
+  name: 'mailpit-ui'
+  location: location
+  tags: union(tags, { 'azd-service-name': 'mailpit-ui' })
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${managedIdentityResourceId}': {}
+    }
+  }
+  properties: {
+    environmentId: acaEnv.id
+    configuration: {
+      ingress: {
+        external: true
+        targetPort: 8080
+        transport: 'http'
+      }
+      registries: [
+        {
+          server: containerRegistryLoginServer
+          identity: managedIdentityResourceId
+        }
+      ]
+      activeRevisionsMode: 'Single'
+    }
+    template: {
+      containers: [
+        {
+          name: 'caddy'
+          image: '${containerRegistryLoginServer}/caddy:latest'
+          command: [ 'caddy' ]
+          args: [ 'reverse-proxy', '--from', ':8080', '--to', 'mailpit:8025' ]
+          resources: {
+            cpu: json('0.25')
+            memory: '0.5Gi'
+          }
         }
       ]
       scale: {
@@ -374,3 +428,4 @@ resource frontend 'Microsoft.App/containerApps@2024-03-01' = {
 
 output frontendUrl string = 'https://${frontend.properties.configuration.ingress.fqdn}'
 output dashboardUrl string = 'https://${aspireDashboard.properties.configuration.ingress.fqdn}'
+output mailpitUiUrl string = 'https://${mailpitUi.properties.configuration.ingress.fqdn}'

@@ -60,53 +60,11 @@ resource acrPullForMi 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   }
 }
 
-// Contributor at ACR scope lets the deploymentScript that mirrors public
-// images into ACR (mailpit, aspire-dashboard) call importImage. ACA's
-// AcrPush built-in role does NOT include the importImage action, so we
-// scope full Contributor — only on this single ACR resource — to the MI.
-var acrContributorRoleId = 'b24988ac-6180-42a0-ab88-20f7382dd24c'
-resource acrContributorForMi 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  scope: containerRegistry
-  name: guid(containerRegistry.id, managedIdentity.id, acrContributorRoleId)
-  properties: {
-    principalId: managedIdentity.properties.principalId
-    principalType: 'ServicePrincipal'
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', acrContributorRoleId)
-  }
-}
-
-// Mirror public images into our ACR so the demo doesn't depend on Docker
-// Hub anonymous-pull rate limits (which Azure outbound IPs hit easily,
-// causing ImagePullBackOff on mailpit). Runs once per provision; az acr
-// import with --force is idempotent and quick if the layers are present.
-resource imageMirror 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
-  name: 'mirror-public-images-${resourceToken}'
-  location: location
-  tags: tags
-  kind: 'AzureCLI'
-  identity: {
-    type: 'UserAssigned'
-    userAssignedIdentities: {
-      '${managedIdentity.id}': {}
-    }
-  }
-  properties: {
-    azCliVersion: '2.60.0'
-    timeout: 'PT10M'
-    retentionInterval: 'P1D'
-    cleanupPreference: 'OnSuccess'
-    scriptContent: 'set -e\naz acr import --name $ACR_NAME --source docker.io/axllent/mailpit:latest --image mailpit:latest --force\naz acr import --name $ACR_NAME --source mcr.microsoft.com/dotnet/aspire-dashboard:9.0 --image aspire-dashboard:9.0 --force'
-    environmentVariables: [
-      {
-        name: 'ACR_NAME'
-        value: containerRegistry.name
-      }
-    ]
-  }
-  dependsOn: [
-    acrContributorForMi
-  ]
-}
+// Public images (mailpit, aspire-dashboard, caddy) are mirrored into this
+// ACR by an azd postprovision hook (see scripts/import-public-images.ps1).
+// Mirroring keeps the demo off Docker Hub's anonymous-pull rate limits;
+// using a hook instead of a deploymentScript avoids the transient ACI
+// provisioning hang that bit us on every re-provision.
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
   name: 'kv-${resourceToken}'

@@ -60,8 +60,6 @@ module secrets 'keyvault-secrets.bicep' = {
     postgresFqdn: data.outputs.postgresFqdn
     postgresAdminLogin: data.outputs.postgresAdminLogin
     postgresPassword: data.outputs.postgresPassword
-    redisHostname: data.outputs.redisHostname
-    redisPassword: data.outputs.redisPassword
     serviceBusNamespace: messaging.outputs.serviceBusNamespace
   }
 }
@@ -79,7 +77,6 @@ module acaEnv 'aca-environment.bicep' = {
     keyVaultName: foundations.outputs.keyVaultName
     managedIdentityClientId: foundations.outputs.managedIdentityClientId
     serviceBusNamespace: messaging.outputs.serviceBusNamespace
-    redisHostname: data.outputs.redisHostname
   }
   dependsOn: [
     secrets
@@ -108,3 +105,4 @@ output keyVaultEndpoint string = foundations.outputs.keyVaultEndpoint
 output keyVaultName string = foundations.outputs.keyVaultName
 output frontendUrl string = apps.outputs.frontendUrl
 output dashboardUrl string = apps.outputs.dashboardUrl
+output mailpitUiUrl string = apps.outputs.mailpitUiUrl

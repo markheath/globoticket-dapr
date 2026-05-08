@@ -48,3 +48,4 @@ output AZURE_KEY_VAULT_ENDPOINT string = resources.outputs.keyVaultEndpoint
 output AZURE_KEY_VAULT_NAME string = resources.outputs.keyVaultName
 output FRONTEND_URL string = resources.outputs.frontendUrl
 output ASPIRE_DASHBOARD_URL string = resources.outputs.dashboardUrl
+output MAILPIT_UI_URL string = resources.outputs.mailpitUiUrl

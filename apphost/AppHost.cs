@@ -11,7 +11,9 @@ var mailpit = builder.AddMailPit("mailpit", httpPort: 8025, smtpPort: 1025);
 // Postgres backs the catalog (EF Core via Aspire-injected connection string)
 // and the ordering Dapr state store (component YAML references localhost:5432
 // directly). Pinning the password keeps the orderstore.yaml component static —
-// same trade-off accepted for Redis and MailPit.
+// same trade-off accepted for MailPit. The basket and workflow state stores
+// run on the Redis that `dapr init` provisions; in Azure they move to
+// Postgres so the cloud topology doesn't need a separate Redis service.
 var pgPassword = builder.AddParameter("pg-password", "postgres", secret: true);
 var postgres = builder.AddPostgres("pg", password: pgPassword, port: 5432)
                       .WithDataVolume();

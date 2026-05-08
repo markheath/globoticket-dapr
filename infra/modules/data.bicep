@@ -1,9 +1,11 @@
-// Data services: Postgres Flexible Server (catalog + ordering DBs) and
-// Azure Cache for Redis (basket + workflow state).
+// Data services: Postgres Flexible Server backing all persistent state
+// (catalog data, ordering data, and the Dapr state stores for basket and
+// workflow). Redis used to back the basket + workflow state stores, but
+// Azure Cache for Redis provisions in 15-25 minutes — moving them to
+// Postgres deletes Redis from the topology and shaves that off `azd up`.
 //
-// Both currently authenticate via password/key. Postgres MI auth and
-// Redis Entra auth are scoped as the next hardening pass — both require
-// either post-deploy steps (Postgres) or higher SKUs (Redis Entra).
+// Authenticates via password. Postgres MI auth is scoped as the next
+// hardening pass and would need a post-deploy role-assignment step.
 
 param location string
 param tags object
@@ -61,6 +63,16 @@ resource postgres 'Microsoft.DBforPostgreSQL/flexibleServers@2023-12-01-preview'
     }
   }
 
+  // Backs the shopstate (basket) and workflowstate (Dapr Workflow actor)
+  // state stores. Different `tableName` metadata keeps them separated.
+  resource daprStateDb 'databases' = {
+    name: 'daprstate'
+    properties: {
+      charset: 'UTF8'
+      collation: 'en_US.utf8'
+    }
+  }
+
   // Allow Azure-internal traffic so Container Apps can reach the server
   // without a private endpoint. Closing this is the natural next step.
   resource allowAzureServices 'firewallRules' = {
@@ -72,30 +84,7 @@ resource postgres 'Microsoft.DBforPostgreSQL/flexibleServers@2023-12-01-preview'
   }
 }
 
-resource redis 'Microsoft.Cache/Redis@2024-03-01' = {
-  name: 'redis-${resourceToken}'
-  location: location
-  tags: tags
-  properties: {
-    sku: {
-      name: 'Standard'
-      family: 'C'
-      capacity: 0
-    }
-    enableNonSslPort: false
-    minimumTlsVersion: '1.2'
-    publicNetworkAccess: 'Enabled'
-    redisConfiguration: {
-      'maxmemory-policy': 'allkeys-lru'
-    }
-  }
-}
-
 output postgresFqdn string = postgres.properties.fullyQualifiedDomainName
 output postgresAdminLogin string = 'pgadmin'
 @secure()
 output postgresPassword string = postgresAdminPassword
-
-output redisHostname string = redis.properties.hostName
-@secure()
-output redisPassword string = redis.listKeys().primaryKey
