@@ -86,8 +86,11 @@ resource aspireDashboard 'Microsoft.App/containerApps@2024-03-01' = {
           ]
         }
       ]
+      // Scale to zero when nobody's looking at the dashboard. Apps push
+      // OTLP continuously while they're awake, but for an idle demo env
+      // we'd rather not pay for an idle dashboard replica.
       scale: {
-        minReplicas: 1
+        minReplicas: 0
         maxReplicas: 1
       }
     }
@@ -215,8 +218,9 @@ resource mailpitUi 'Microsoft.App/containerApps@2024-03-01' = {
           }
         }
       ]
+      // Scale to zero — the proxy is stateless, cold-starts in seconds.
       scale: {
-        minReplicas: 1
+        minReplicas: 0
         maxReplicas: 1
       }
     }
@@ -302,8 +306,12 @@ resource catalog 'Microsoft.App/containerApps@2024-03-01' = {
           ])
         }
       ]
+      // Scale to zero. Cold-start cost on first frontend->catalog hit
+      // is ~5s. Side effect: the cron binding (5-min inventory reset)
+      // doesn't fire while idle, which is fine — there's nobody using
+      // the demo at that moment anyway.
       scale: {
-        minReplicas: 1
+        minReplicas: 0
         maxReplicas: 1
       }
     }
@@ -418,8 +426,11 @@ resource frontend 'Microsoft.App/containerApps@2024-03-01' = {
           ])
         }
       ]
+      // Scale to zero. The default ACA HTTP scaler wakes a replica on
+      // first request — adds ~5s cold-start to the first browse, then
+      // hot until the next idle period.
       scale: {
-        minReplicas: 1
+        minReplicas: 0
         maxReplicas: 1
       }
     }
