@@ -1,14 +1,17 @@
-# These hit the catalog API directly on its launchSettings-pinned port.
-GET http://localhost:5016/event
+# Hits the catalog API directly. Aspire allocates the port dynamically — find
+# it in the Aspire dashboard next to the "catalog" resource, then substitute
+# below.
+@catalogPort = 5016
+GET http://localhost:{{catalogPort}}/event
 
 ###
-GET http://localhost:5016/event/cfb88e29-4744-48c0-94fa-b25b92dea317
+GET http://localhost:{{catalogPort}}/event/cfb88e29-4744-48c0-94fa-b25b92dea317
 
 ###
 # Going through Dapr service invocation requires the *frontend* sidecar's HTTP
 # port. Aspire allocates that dynamically — find it in the Aspire dashboard
 # next to the "frontend-dapr" resource, then substitute below.
-@frontendDaprPort = 0
+@frontendDaprPort = 59597
 GET http://localhost:{{frontendDaprPort}}/v1.0/invoke/catalog/method/event
 
 ###
